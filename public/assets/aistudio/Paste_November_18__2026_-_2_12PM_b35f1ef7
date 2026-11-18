@@ -1,0 +1,1149 @@
+# ABYSS: INFINITE FRONTIER
+# ONE-SHOT COMPLETE GAME DEVELOPMENT
+## FULL GODOT 4 PROJECT — OPEN WORLD SPACE EXPLORATION SURVIVAL GAME
+
+You are an elite AAA game development studio, senior Godot engineers, technical artists, 3D environment artists, gameplay designers, procedural generation specialists, animation designers, UI/UX designers, and QA engineers.
+
+YOUR TASK IS TO BUILD THE COMPLETE GAME DIRECTLY.
+
+This is a one-shot full game development request.
+
+I DO NOT WANT A STEP-BY-STEP DEVELOPMENT PLAN.
+
+I DO NOT WANT A DEVELOPMENT ROADMAP.
+
+I DO NOT WANT A PROJECT THAT ONLY COMPLETES PHASE 1.
+
+I DO NOT WANT A PROTOTYPE THAT REQUIRES ME TO ASK YOU TO CONTINUE.
+
+I DO NOT WANT A RESPONSE THAT ONLY EXPLAINS HOW TO MAKE THE GAME.
+
+I WANT THE ACTUAL COMPLETE GODOT PROJECT, WITH ALL AVAILABLE GAME SYSTEMS IMPLEMENTED, CONNECTED, AND TESTED IN THIS SINGLE DEVELOPMENT TASK.
+
+You must directly inspect, create, modify, implement, repair, and validate the project files.
+
+Do not stop after analyzing the project.
+
+Do not stop after creating the architecture.
+
+Do not stop after creating the player controller.
+
+Do not wait for additional instructions.
+
+Do not ask me to approve individual implementation steps.
+
+Complete the entire playable project in one execution using the available development environment and tools.
+
+==================================================
+1. PROJECT IDENTITY
+==================================================
+
+GAME TITLE:
+
+ABYSS: INFINITE FRONTIER
+
+GAME TYPE:
+- Massive open-universe exploration.
+- Procedural planetary generation.
+- Space exploration.
+- Third-person survival.
+- Alien wildlife.
+- Spacecraft flight.
+- Planetary landing.
+- Crafting.
+- Mining.
+- Base building.
+- Alien civilizations.
+- Space combat.
+- Exploration RPG.
+- Persistent open-world sandbox.
+
+PRIMARY INSPIRATION:
+
+The freedom, planetary exploration, enormous procedural universe, spacecraft travel, exploration, and survival experience of No Man's Sky.
+
+However, create an original game identity, original models, original environments, original characters, original creatures, original sounds, original interfaces, and original lore.
+
+Do not copy copyrighted assets or proprietary content.
+
+==================================================
+2. STRICT ENGINE REQUIREMENTS
+==================================================
+
+THIS PROJECT MUST BE A REAL GODOT PROJECT.
+
+Engine: Godot 4.x.
+Programming language: GDScript 2.0.
+Platform: Windows PC.
+Graphics: 3D.
+Rendering: Forward+ where supported.
+
+Use only actual Godot-compatible systems.
+
+Use:
+- GDScript.
+- Godot scenes.
+- Godot resources.
+- Godot shaders.
+- Godot materials.
+- Godot physics.
+- Godot AnimationTree.
+- Godot NavigationServer.
+- Godot procedural mesh systems.
+- Godot resource loading.
+- Godot FileAccess.
+- Godot multiplayer architecture where applicable.
+
+Do not create:
+- Unity projects.
+- HTML games.
+- Web applications.
+- Three.js projects.
+- React applications.
+- Fake Godot project folders.
+
+The final root folder MUST contain project.godot.
+
+The project must open directly inside Godot Editor.
+
+All essential resources must be included.
+
+==================================================
+3. ONE-SHOT COMPLETION RULE
+==================================================
+
+Complete all major playable systems in this same task.
+
+Do not divide the result into future development phases.
+
+Do not provide a list of features that should be implemented later when those features can be implemented now.
+
+Do not create empty classes for future functionality.
+
+Do not create buttons that do nothing.
+
+Do not use placeholder methods that pretend to execute gameplay.
+
+Do not create a UI that only looks functional.
+
+Every major interface must connect to its actual gameplay system.
+
+Every major mechanic must have a real implementation.
+
+When a complex system cannot be reproduced at full AAA production scale, implement a fully working, optimized version that preserves its intended gameplay.
+
+For example:
+- Use deterministic procedural planets rather than manually creating every planet.
+- Use modular creature generation rather than requiring thousands of individually modeled animals.
+- Use intelligent streaming rather than loading an entire galaxy.
+- Use optimized procedural environments rather than trying to store billions of unique scenes.
+- Use actual save data rather than fake save notifications.
+
+The objective is a complete, playable, cohesive game with working systems, not an unfinished collection of ambitious ideas.
+
+==================================================
+4. EXISTING PROJECT INSPECTION
+==================================================
+
+Inspect the entire existing project before modifying it.
+
+Check:
+- project.godot.
+- Main scenes.
+- All GDScript files.
+- Existing resources.
+- Models.
+- Materials.
+- Shaders.
+- InputMap.
+- Autoloads.
+- UI.
+- Player systems.
+- Existing gameplay mechanics.
+- Dependencies.
+- Broken resource references.
+
+Preserve all existing working functionality.
+
+Repair existing errors.
+
+Do not delete important existing assets without a reason.
+
+Do not create duplicate systems.
+
+If a feature already exists, improve it and integrate it into the completed game.
+
+Continue using the project's existing structure where practical.
+
+==================================================
+5. MASSIVE PROCEDURAL UNIVERSE
+==================================================
+
+Build an enormous procedurally generated universe.
+
+The game should support millions of addressable star systems and billions of potential procedural planetary identities through deterministic generation.
+
+These are generated possibilities, not simultaneously loaded worlds.
+
+Universe hierarchy:
+
+UNIVERSE
+  GALAXIES
+    REGIONS
+      STAR SYSTEMS
+        STARS
+        PLANETS
+        MOONS
+        ASTEROIDS
+        SPACE STATIONS
+        ANOMALIES
+        DISCOVERIES
+
+Create:
+- Multiple galaxy regions.
+- Multiple star classes.
+- Binary star systems.
+- Multiple planets per star system.
+- Different planetary orbits.
+- Different planetary sizes.
+- Different gravity levels.
+- Different atmospheric conditions.
+- Different planetary resources.
+- Different civilizations.
+- Different space environments.
+
+Every generated system must have deterministic seeds.
+
+The same seed must reproduce the same logical planetary characteristics.
+
+Implement procedural generation, caching, and intelligent streaming.
+
+Do not load every generated object at once.
+
+Create a beautiful interactive galaxy map with real procedural data.
+
+==================================================
+6. EXTREMELY DIVERSE PLANETS
+==================================================
+
+Create at least 36 planetary archetypes.
+
+Planet types:
+
+1. Paradise Planet.
+2. Tropical Planet.
+3. Jungle Planet.
+4. Giant Forest Planet.
+5. Desert Planet.
+6. Rocky Desert Planet.
+7. Frozen Planet.
+8. Ice Crystal Planet.
+9. Volcanic Planet.
+10. Lava Planet.
+11. Toxic Planet.
+12. Radioactive Planet.
+13. Ocean Planet.
+14. Deep Ocean Planet.
+15. Swamp Planet.
+16. Mushroom Planet.
+17. Crystal Planet.
+18. Floating Island Planet.
+19. Mountain Planet.
+20. Canyon Planet.
+21. Barren Planet.
+22. Ancient Ruins Planet.
+23. Abandoned Colony Planet.
+24. Bioluminescent Planet.
+25. Alien Flower Planet.
+26. Acid Rain Planet.
+27. Extreme Storm Planet.
+28. Dark Planet.
+29. Gas Giant.
+30. Exotic Anomaly Planet.
+31. Metallic Planet.
+32. Artificial Machine Planet.
+33. Terraforming Experiment Planet.
+34. Giant Cave Planet.
+35. High Gravity Planet.
+36. Low Gravity Planet.
+
+Every archetype must have many procedural variations.
+
+Generate:
+- Different terrain.
+- Different mountains.
+- Different valleys.
+- Different forests.
+- Different geological structures.
+- Different sky colors.
+- Different clouds.
+- Different atmosphere.
+- Different weather.
+- Different water.
+- Different flora.
+- Different wildlife.
+- Different resources.
+- Different environmental hazards.
+
+Planets must have unique appearances, not simply recolored copies.
+
+Create biome blending so one planet can contain multiple different environments.
+
+Create a procedural planet profile system.
+
+Each planet must have:
+- Unique name.
+- Seed.
+- Type.
+- Radius.
+- Gravity.
+- Temperature.
+- Atmosphere.
+- Water level.
+- Biomes.
+- Weather.
+- Resources.
+- Wildlife.
+- Flora.
+- Rarity.
+- Discovery status.
+
+==================================================
+7. HIGH-QUALITY PLANETARY TERRAIN
+==================================================
+
+Create spherical planetary terrain.
+
+Use cube-sphere terrain or another technically suitable spherical terrain architecture.
+
+Implement:
+- Procedural terrain mesh.
+- FastNoiseLite.
+- Multiple noise layers.
+- Height variation.
+- Mountains.
+- Cliffs.
+- Canyons.
+- Valleys.
+- Craters.
+- Beaches.
+- Rocky formations.
+- Rivers where appropriate.
+- Lakes.
+- Underground areas.
+- Terrain chunk streaming.
+- Multi-level detail.
+
+The terrain must be explorable.
+
+Generate appropriate collision for the player's active surroundings.
+
+Optimize terrain generation.
+
+Implement LOD transitions.
+
+Prevent gaps, flickering, collision problems, floating objects, and obvious mesh popping.
+
+The player should be able to travel across a spherical planet while maintaining correct local gravity and orientation.
+
+==================================================
+8. SEAMLESS SPACE AND PLANET TRANSITIONS
+==================================================
+
+THIS IS ONE OF THE MOST IMPORTANT GAMEPLAY REQUIREMENTS.
+
+The player must be able to pilot the spacecraft continuously.
+
+I DO NOT WANT THE PLAYER TO PRESS E TO ENTER OR EXIT A PLANET.
+
+I DO NOT WANT PLANETARY TRAVEL TO BE A TELEPORTATION MECHANIC.
+
+I DO NOT WANT ORDINARY PLANETARY TRAVEL TO USE A LOADING SCREEN.
+
+The spacecraft must be physically controlled by the player.
+
+### TAKEOFF
+
+When flying away from the surface:
+- Activate spacecraft engines.
+- Retract landing gear.
+- Show engine exhaust.
+- Increase altitude naturally.
+- Stream planetary terrain appropriately.
+- Gradually blend atmospheric fog.
+- Transition sky color.
+- Decrease atmospheric scattering.
+- Reveal stars.
+- Reveal the planet curvature.
+- Enter open space naturally.
+
+### PLANET APPROACH
+
+When flying toward another planet:
+- Detect proximity.
+- Begin atmospheric entry.
+- Increase atmospheric effects.
+- Blend cloud layers.
+- Show heating effects where appropriate.
+- Progressively reveal terrain.
+- Stream terrain chunks.
+- Reveal vegetation and environmental details.
+- Display weather conditions.
+- Identify suitable landing locations.
+
+### AUTOMATIC LANDING
+
+When the ship enters a valid landing condition:
+- Reduce speed.
+- Find an appropriate landing surface.
+- Align the ship.
+- Lower landing gear.
+- Complete landing automatically.
+
+Do not require an E-key interaction.
+
+The player should remain in control of the flight experience.
+
+### PLANETARY TRAVEL
+
+Allow the player to fly manually between nearby planets.
+
+Create a destination navigation system.
+
+Allow optional assisted navigation.
+
+Warp travel must be integrated with spacecraft controls.
+
+Warp effects must include:
+- Space distortion.
+- Star streaks.
+- Engine effects.
+- Camera effects.
+- Audio transition.
+- Destination arrival.
+- Smooth return to normal space.
+
+Transitions must not suddenly teleport the spacecraft between two unrelated scenes during ordinary flight.
+
+Use asynchronous generation and streaming.
+
+Keep planetary identity consistent between distant representation and high-detail terrain.
+
+Use appropriate floating-origin or local coordinate systems to avoid precision issues.
+
+==================================================
+9. PLAYER CHARACTER
+==================================================
+
+Create a polished third-person explorer character.
+
+The character must have:
+- Detailed spacesuit.
+- Helmet.
+- Backpack.
+- Oxygen equipment.
+- Gloves.
+- Boots.
+- Armor panels.
+- Emissive elements.
+- Material variation.
+
+Implement:
+- Walking.
+- Running.
+- Sprinting.
+- Jumping.
+- Falling.
+- Landing.
+- Crouching.
+- Swimming.
+- Jetpack.
+- Mining.
+- Scanning.
+- Interactions.
+- Building.
+- Weapon usage.
+
+Create smooth responsive movement.
+
+Use proper camera-relative controls.
+
+Create smooth camera movement, collision detection, camera sensitivity, and field-of-view settings.
+
+Use AnimationTree and AnimationPlayer.
+
+Include:
+- Idle.
+- Walk.
+- Run.
+- Sprint.
+- Jump.
+- Fall.
+- Landing.
+- Jetpack.
+- Mining.
+- Scanning.
+- Building.
+- Interaction.
+- Combat.
+
+Do not use a primitive capsule as the final visible character model.
+
+==================================================
+10. PROCEDURAL ALIEN CREATURES
+==================================================
+
+Create an elaborate procedural alien life system.
+
+Generate:
+- Small creatures.
+- Giant herbivores.
+- Predators.
+- Flying creatures.
+- Aquatic creatures.
+- Deep-sea species.
+- Insects.
+- Amphibious creatures.
+- Underground creatures.
+- Rare exotic species.
+- Bioluminescent lifeforms.
+
+Every creature should have distinctive:
+- Shape.
+- Size.
+- Silhouette.
+- Color.
+- Pattern.
+- Limbs.
+- Head.
+- Eyes.
+- Movement.
+- Behavior.
+
+Implement creature behavior:
+- Idle.
+- Roaming.
+- Feeding.
+- Hunting.
+- Fleeing.
+- Attacking.
+- Defending.
+- Sleeping.
+- Swimming.
+- Flying.
+- Group movement.
+
+Create environmental interactions.
+
+Predators hunt prey.
+
+Herbivores interact with plants.
+
+Creatures react to player proximity.
+
+Some creatures have daytime and nighttime activity patterns.
+
+Use optimized distance-based AI.
+
+==================================================
+11. PROCEDURAL FLORA
+==================================================
+
+Create:
+- Alien trees.
+- Giant flowers.
+- Mushrooms.
+- Crystals.
+- Glowing plants.
+- Jungle vegetation.
+- Desert plants.
+- Underwater plants.
+- Floating vegetation.
+- Rare exotic vegetation.
+
+Add shader-based wind effects.
+
+Use MultiMeshInstance3D where suitable.
+
+Support procedural variation and density based on biome.
+
+==================================================
+12. SPACECRAFT
+==================================================
+
+Create high-quality original spacecraft.
+
+Ship types:
+- Explorer.
+- Fighter.
+- Hauler.
+- Scientific ship.
+- Mining ship.
+- Heavy transport.
+- Exotic experimental ship.
+
+Implement:
+- Flight physics.
+- Pitch.
+- Yaw.
+- Roll.
+- Acceleration.
+- Braking.
+- Boost.
+- Landing.
+- Takeoff.
+- Warp drive.
+- Engine damage.
+- Shield.
+- Weapons.
+- Cargo.
+- Fuel.
+- Repair.
+- Upgrades.
+- Customization.
+
+Create detailed original spaceship models.
+
+Do not use primitive shapes as the final spaceship.
+
+Add engine particles, lighting, landing gear animation, cockpit details, and spacecraft audio.
+
+==================================================
+13. SURVIVAL, MINING, INVENTORY AND CRAFTING
+==================================================
+
+Implement a complete survival system:
+- Health.
+- Oxygen.
+- Life support.
+- Temperature.
+- Radiation.
+- Toxic resistance.
+- Environmental protection.
+- Jetpack energy.
+
+Implement actual mining and resource collection.
+
+Resources:
+- Metals.
+- Minerals.
+- Crystals.
+- Organic resources.
+- Gases.
+- Rare materials.
+- Ancient artifacts.
+- Technology components.
+
+Build a complete inventory:
+- Player inventory.
+- Ship inventory.
+- Base storage.
+- Equipment slots.
+- Upgrade slots.
+- Hotbar.
+- Item stacking.
+- Item transfers.
+- Sorting.
+- Search.
+- Descriptions.
+
+Implement crafting:
+- Tools.
+- Equipment.
+- Batteries.
+- Fuel.
+- Weapons.
+- Ship upgrades.
+- Survival supplies.
+- Construction parts.
+
+Implement working refineries and crafting stations.
+
+All transactions must update actual inventory data.
+
+==================================================
+14. BASE BUILDING
+==================================================
+
+Create a fully functional base-building system.
+
+Build:
+- Foundations.
+- Floors.
+- Walls.
+- Roofs.
+- Windows.
+- Doors.
+- Stairs.
+- Platforms.
+- Towers.
+- Landing pads.
+- Storage.
+- Generators.
+- Research rooms.
+- Farming rooms.
+- Decoration.
+- Lighting.
+
+Features:
+- Placement preview.
+- Rotation.
+- Grid snapping.
+- Collision validation.
+- Resource validation.
+- Construction.
+- Removal.
+- Repair.
+- Customization.
+- Persistent saving.
+
+Add:
+- Solar power.
+- Wind power.
+- Batteries.
+- Geothermal power.
+- Reactors.
+- Alien farming.
+
+The base must remain after leaving the planet and restarting the game.
+
+==================================================
+15. NPC, MISSIONS, TRADING AND CIVILIZATIONS
+==================================================
+
+Create original alien factions and civilizations.
+
+Implement:
+- Alien NPCs.
+- Trading settlements.
+- Research colonies.
+- Mining stations.
+- Military outposts.
+- Ancient ruins.
+- Abandoned structures.
+- Space stations.
+
+NPCs must have actual behavior.
+
+Add dynamic missions:
+- Exploration.
+- Rescue.
+- Delivery.
+- Mining.
+- Combat.
+- Research.
+- Investigation.
+- Ancient ruins.
+- Space anomalies.
+
+Create:
+- Mission journal.
+- Trading.
+- Economy.
+- Reputation.
+- Rewards.
+- Progression.
+
+==================================================
+16. SCANNING AND DISCOVERY
+==================================================
+
+Create a functional scanner.
+
+Scan:
+- Planets.
+- Animals.
+- Plants.
+- Rocks.
+- Minerals.
+- Ruins.
+- Technology.
+- Anomalies.
+- Spacecraft.
+- Star systems.
+
+Create a discovery journal.
+
+Save discoveries permanently.
+
+Display:
+- Discovery name.
+- Planet.
+- Location.
+- Biome.
+- Scientific information.
+- Rarity.
+- Description.
+- Discovery status.
+
+==================================================
+17. PREMIUM GRAPHICS AND ENVIRONMENT
+==================================================
+
+VISUAL QUALITY IS A MAJOR PRIORITY.
+
+The result must look like a polished modern 3D science-fiction game, not a basic Godot sample project.
+
+Implement:
+- PBR materials.
+- High-quality textures.
+- Normal maps.
+- Roughness maps.
+- Metallic surfaces.
+- Emissive effects.
+- Atmospheric scattering approximation.
+- Planetary clouds.
+- Detailed terrain.
+- Water shaders.
+- Environmental fog.
+- Volumetric effects where available.
+- Shadow quality.
+- Ambient occlusion where supported.
+- Bloom.
+- Color grading.
+- Dynamic lighting.
+- Day/night cycles.
+- Planet-specific skies.
+- Weather particles.
+- Space visuals.
+- Nebulae.
+- Stars.
+- Asteroid fields.
+
+Use consistent professional art direction.
+
+Create attractive environments with clear visual differences between planets.
+
+Create polished character, alien, spacecraft, building, and environment models.
+
+Use original or properly licensed assets.
+
+If external models are unavailable, produce suitable procedural meshes and materials instead of leaving final objects as default primitives.
+
+Do not falsely claim a high-quality imported model exists when it was not generated or included.
+
+==================================================
+18. MODERN UI AND MENUS
+==================================================
+
+Create an excellent professional sci-fi UI.
+
+Main menu:
+- Continue.
+- New Universe.
+- Load Universe.
+- Multiplayer.
+- Settings.
+- Credits.
+- Exit.
+
+Create:
+- Animated planetary background.
+- Spacecraft.
+- Starfield.
+- Atmospheric visual effects.
+- Smooth UI transitions.
+
+Other interfaces:
+- Inventory.
+- Crafting.
+- Galaxy map.
+- Planet map.
+- Discovery journal.
+- Mission journal.
+- Ship management.
+- Base building.
+- Trading.
+- Character customization.
+- Settings.
+- Pause menu.
+
+Use modern typography, icons, spacing, transparent panels, refined colors, and smooth animation.
+
+Every button must work.
+
+Do not create decorative-only controls.
+
+==================================================
+19. GALAXY NAVIGATION
+==================================================
+
+Create a fully functional galaxy map.
+
+Allow:
+- Zoom.
+- Rotation.
+- Selecting star systems.
+- Inspecting planets.
+- Viewing star information.
+- Setting destinations.
+- Checking warp range.
+- Viewing discovery status.
+
+Show real generated universe data.
+
+Create planetary surface navigation with resource and exploration markers.
+
+==================================================
+20. COMPLETE SAVE AND LOAD
+==================================================
+
+Implement full persistent save data.
+
+The player must be able to:
+- Start a new universe.
+- Save the universe.
+- Continue.
+- Load existing worlds.
+- Use multiple save slots.
+- Delete worlds with confirmation.
+
+Save:
+- Universe seed.
+- Planet.
+- Star system.
+- Position.
+- Player status.
+- Character customization.
+- Inventory.
+- Equipment.
+- Spacecraft.
+- Spacecraft upgrades.
+- Resources.
+- Bases.
+- Built structures.
+- Storage.
+- Discovered planets.
+- Discovered creatures.
+- Missions.
+- Progression.
+- World modifications.
+
+Implement:
+- Autosave.
+- Manual save.
+- Backup.
+- Data validation.
+- Safe write.
+- Error handling.
+- Corruption detection.
+- Save versioning.
+
+Procedural terrain should regenerate from seeds.
+
+Save persistent modifications separately.
+
+Never silently overwrite an existing save.
+
+==================================================
+21. PERFORMANCE
+==================================================
+
+Optimize the whole project.
+
+Implement:
+- Terrain chunks.
+- Planet LOD.
+- Object pooling.
+- MultiMesh.
+- Efficient AI updates.
+- Frustum culling.
+- Distance-based updates.
+- Resource caching.
+- Collision optimization.
+- Efficient shaders.
+- Memory management.
+- Asynchronous resource generation where safe.
+
+Create graphics settings:
+- Low.
+- Medium.
+- High.
+- Ultra.
+
+Support resolution settings, shadow quality, view distance, texture quality, foliage density, and frame rate limits.
+
+Target smooth gameplay at 60 FPS on suitable PC hardware.
+
+Do not sacrifice playability through unnecessary rendering effects.
+
+==================================================
+22. STRICT BUG PREVENTION
+==================================================
+
+This project must be validated before final delivery.
+
+Check every GDScript file.
+
+Check all scene paths.
+
+Check every preload().
+
+Check every load().
+
+Check every node path.
+
+Check every signal.
+
+Check all autoloads.
+
+Check every input action.
+
+Check all resource references.
+
+Prevent:
+- Syntax errors.
+- Undefined identifiers.
+- Invalid types.
+- Null references.
+- Invalid casts.
+- Missing functions.
+- Invalid arguments.
+- Incorrect return types.
+- Empty-array access.
+- Broken scene references.
+- Missing assets.
+- Duplicate class names.
+- Cyclic dependencies.
+- Infinite loops.
+- Physics errors.
+- Invalid shader code.
+
+Use explicit typing for critical functions and variables.
+
+Use compatible Godot 4 APIs.
+
+Do not mix Godot 3 and Godot 4 syntax.
+
+Validate all dynamically created resources.
+
+Do not assume a function works without checking its actual implementation.
+
+==================================================
+23. MANDATORY AUTOMATED VALIDATION
+==================================================
+
+After completing the project, run actual validation.
+
+When Godot is available, use headless project validation.
+
+For example, use an appropriate Godot 4 executable command such as:
+
+godot --headless --path . --editor --quit
+
+Then validate the main scene.
+
+Run the game.
+
+Inspect errors.
+
+Fix parsing failures.
+
+Fix missing resources.
+
+Fix runtime errors.
+
+Repeat validation after corrections.
+
+Test the complete gameplay flow:
+
+1. Launch game.
+2. Open main menu.
+3. Create universe.
+4. Enter planetary environment.
+5. Control character.
+6. Scan objects.
+7. Mine resources.
+8. Open inventory.
+9. Craft items.
+10. Enter spacecraft.
+11. Take off.
+12. Fly through atmosphere.
+13. Enter space.
+14. Navigate between planets.
+15. Enter another atmosphere.
+16. Land automatically.
+17. Explore another biome.
+18. Build a structure.
+19. Save.
+20. Exit.
+21. Continue saved universe.
+22. Verify all persistent data.
+
+Test available performance and graphics settings.
+
+Do not report tests as successful unless they have actually been executed.
+
+No software project can honestly guarantee zero bugs without exhaustive testing across hardware configurations. Nevertheless, fix every reproducible error and known critical defect before delivery.
+
+==================================================
+24. FINAL OUTPUT REQUIREMENTS
+==================================================
+
+THE FINAL DELIVERABLE MUST BE THE COMPLETE GODOT PROJECT.
+
+Required files:
+- project.godot.
+- Main scene.
+- All essential GDScript files.
+- All essential .tscn files.
+- All essential .tres files.
+- Shaders.
+- Materials.
+- Assets.
+- Input configuration.
+- Save/load implementation.
+- UI.
+- Environment.
+- Testing documentation.
+- README.
+
+All resource references must resolve.
+
+The game must not depend on missing source files.
+
+Make sure the project can be opened and run directly in Godot Editor.
+
+If the environment supports file export, package the entire project as a ZIP archive.
+
+Provide the exact main scene path and import instructions.
+
+Provide a truthful report of implemented systems and any remaining limitations.
+
+==================================================
+25. FINAL COMMAND — DO EVERYTHING NOW
+==================================================
+
+THIS IS A ONE-SHOT FULL PROJECT COMPLETION REQUEST.
+
+DO NOT RESPOND WITH A ROADMAP.
+
+DO NOT GIVE ME A DEVELOPMENT PLAN.
+
+DO NOT ASK ME TO SAY CONTINUE.
+
+DO NOT STOP AFTER CREATING THE INITIAL SCENE.
+
+DO NOT DEFER FEATURES TO FUTURE MESSAGES.
+
+DO NOT RETURN ONLY CODE SNIPPETS.
+
+DO NOT RETURN ONLY A DOCUMENTATION FILE.
+
+DO NOT CREATE A FAKE DEMO.
+
+DO NOT MAKE ME ASSEMBLE THE PROJECT MANUALLY FROM FRAGMENTS.
+
+CREATE THE ACTUAL COMPLETE GODOT PROJECT NOW.
+
+Inspect the existing project, make all necessary modifications, create the required scripts and scenes, implement the gameplay systems, connect the interface, build the procedural universe, implement spaceflight and seamless planetary transitions, create the save/load functionality, improve the graphics, and validate the result.
+
+Make reasonable technical decisions independently.
+
+When a full AAA implementation exceeds available computational or development limits, provide the most complete and polished genuinely playable implementation possible in the current execution, rather than leaving the entire project unfinished.
+
+Prioritize functional systems, visual quality, stability, and completeness.
+
+The final result must be a cohesive Godot game that can actually be launched and played.
+
+START IMPLEMENTING THE COMPLETE GAME DIRECTLY. DO NOT WAIT FOR ANOTHER PROMPT.
