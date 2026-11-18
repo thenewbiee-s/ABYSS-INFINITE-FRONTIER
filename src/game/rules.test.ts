@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
 import {
   addItemToSlots,
   canCraftRecipe,
@@ -17,9 +18,11 @@ import {
   validateSaveGame,
   writeSaveSlot,
 } from './rules';
-import { generateStarSystem, samplePlanetSurfaceRadius } from './universe';
-import { ARCHETYPE_LIST } from './catalog';
+import { generatePlanetProfile, generateStarSystem, samplePlanetSurfaceRadius } from './universe';
+import { ARCHETYPE_LIST, ITEM_LIST, ITEMS, RECIPES } from './catalog';
 import { PlacedStructure } from './types';
+import { createPlanetRuntime, samplePlanetMeshSurface } from './planetWorld';
+import { ProceduralTextureSet } from './textures';
 
 function makeMockStorage(): Storage {
   const map = new Map<string, string>();
@@ -39,6 +42,18 @@ function makeMockStorage(): Storage {
   };
 }
 
+function makeDummyTextures(): ProceduralTextureSet {
+  const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1) as unknown as THREE.CanvasTexture;
+  tex.needsUpdate = true;
+  return {
+    terrainBump: tex,
+    hullBump: tex,
+    hullRoughness: tex,
+    hexGrid: tex,
+    glowSprite: tex,
+  };
+}
+
 test('universe has 36 distinct planetary archetypes and deterministic generation', () => {
   assert.equal(ARCHETYPE_LIST.length, 36);
   const sysA = generateStarSystem(424242, { x: 0, y: 0, z: 0, index: 0 }, true);
@@ -55,10 +70,68 @@ test('universe has 36 distinct planetary archetypes and deterministic generation
   assert.ok(r1 > p.radius - 30 && r1 < p.radius + 40);
 });
 
-test('inventory stacking, removal, sorting, and crafting execute cleanly', () => {
-  let slots = new Array(8).fill(null);
+test('expanded catalog has 40+ items, 18+ valid recipes, and biome-authentic planet resources & biota', () => {
+  assert.ok(ITEM_LIST.length >= 40, `Expected >=40 items, got ${ITEM_LIST.length}`);
+  assert.ok(RECIPES.length >= 18, `Expected >=18 recipes, got ${RECIPES.length}`);
+
+  for (const r of RECIPES) {
+    assert.ok(ITEMS[r.outputId], `Missing output item ${r.outputId} for ${r.id}`);
+    for (const ing of r.ingredients) {
+      assert.ok(ITEMS[ing.itemId], `Missing ingredient ${ing.itemId} for ${r.id}`);
+    }
+  }
+
+  // Verify biome resource and creature specialization across distinct planet archetypes
+  const ocean = generatePlanetProfile(101, 'sys_t', 'Test', 1, 'ocean');
+  assert.ok(ocean.resources.includes('kelp_sac'));
+  assert.ok(ocean.creatureSpecies.some((c) => c.bodyType === 'aquatic'));
+
+  const frozen = generatePlanetProfile(202, 'sys_t', 'Test', 2, 'frozen');
+  assert.ok(frozen.resources.includes('frost_crystal'));
+
+  const volcanic = generatePlanetProfile(303, 'sys_t', 'Test', 3, 'volcanic');
+  assert.ok(volcanic.resources.includes('solanium') && volcanic.resources.includes('basalt_shard'));
+
+  const machine = generatePlanetProfile(404, 'sys_t', 'Test', 4, 'machine_world');
+  assert.ok(machine.resources.includes('machine_core'));
+});
+
+test('exact triangle mesh collider matches rendered planet surface triangles with zero clipping', () => {
+  const sys = generateStarSystem(424242, { x: 0, y: 0, z: 0, index: 0 }, true);
+  const planet = sys.planets[2]; // volcanic with bumpy ridges
+  const rt = createPlanetRuntime(planet, 10, makeDummyTextures());
+  rt.group.updateMatrixWorld(true);
+  const raycaster = new THREE.Raycaster();
+  const outerDist = planet.radius + 150;
+
+  for (let i = 0; i < 60; i++) {
+    const theta = (i / 60) * Math.PI * 2;
+    const phi = ((i * 7) % 19) / 20 * Math.PI + 0.05;
+    const dir = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta)
+    ).normalize();
+
+    const meshR = samplePlanetMeshSurface(rt, dir.x, dir.y, dir.z);
+    const origin = rt.group.position.clone().addScaledVector(dir, outerDist);
+    raycaster.set(origin, dir.clone().negate());
+    const hits = raycaster.intersectObject(rt.terrainMesh, false);
+    assert.ok(hits.length >= 1, `Expected raycast hit for sample ${i}`);
+    const exactDist = outerDist - hits[0].distance;
+    assert.ok(
+      Math.abs(meshR - exactDist) < 0.02,
+      `Collider radius ${meshR} differed from rendered triangle ${exactDist} by ${Math.abs(meshR - exactDist)}`
+    );
+  }
+});
+
+test('inventory stacking, removal, sorting, and new crafting recipes execute cleanly', () => {
+  let slots = new Array(12).fill(null);
   slots = addItemToSlots(slots, 'ferrite_dust', 10).nextSlots;
   slots = addItemToSlots(slots, 'carbon', 10).nextSlots;
+  slots = addItemToSlots(slots, 'copper_ore', 8).nextSlots;
+  slots = addItemToSlots(slots, 'silicate_powder', 4).nextSlots;
   assert.equal(countItem(slots, 'ferrite_dust'), 10);
 
   assert.equal(canCraftRecipe(slots, 'craft_launch_fuel'), true);
@@ -67,10 +140,15 @@ test('inventory stacking, removal, sorting, and crafting execute cleanly', () =>
   assert.equal(countItem(crafted.nextSlots, 'launch_fuel'), 1);
   assert.equal(countItem(crafted.nextSlots, 'ferrite_dust'), 5);
 
-  const rem = removeItemFromSlots(crafted.nextSlots, 'ferrite_dust', 99);
+  assert.equal(canCraftRecipe(crafted.nextSlots, 'craft_chromatic_metal'), true);
+  const craftedChroma = executeCraftRecipe(crafted.nextSlots, 'craft_chromatic_metal');
+  assert.equal(craftedChroma.crafted, true);
+  assert.equal(countItem(craftedChroma.nextSlots, 'chromatic_metal'), 2);
+
+  const rem = removeItemFromSlots(craftedChroma.nextSlots, 'ferrite_dust', 99);
   assert.equal(rem.success, false);
 
-  const sorted = sortInventorySlots(crafted.nextSlots);
+  const sorted = sortInventorySlots(craftedChroma.nextSlots);
   assert.ok(sorted[0] !== null);
 });
 
@@ -109,9 +187,10 @@ test('base building power grid and resource consumption', () => {
   assert.equal(grid.net, 17);
 });
 
-test('survival drain, consumables, and warp checks behave accurately', () => {
+test('survival drain, consumables including repair_kit/thermal_cell, and warp checks behave accurately', () => {
   const sys = generateStarSystem(1337, { x: 0, y: 0, z: 0, index: 0 }, true);
   const save = createInitialSaveGame('slot_1', 'Test', 1337, sys);
+  assert.equal(save.playerInventory.length, 30);
 
   const toxicPlanet = { ...sys.planets[2], hazard: 'heat' as const };
   const drained = stepSurvival(save.survival, toxicPlanet, 5, false, true, false, false);
@@ -122,6 +201,12 @@ test('survival drain, consumables, and warp checks behave accurately', () => {
   const healed = useConsumableItem(save.playerInventory, 'life_gel', drained, save.ship);
   assert.equal(healed.used, true);
   assert.ok(healed.nextSurvival.oxygen > drained.oxygen);
+
+  const withKit = addItemToSlots(save.playerInventory, 'repair_kit', 1).nextSlots;
+  const damagedShip = { ...save.ship, hull: 50, shield: 10 };
+  const repaired = useConsumableItem(withKit, 'repair_kit', drained, damagedShip);
+  assert.equal(repaired.used, true);
+  assert.equal(repaired.nextShip.hull, 95);
 
   const warpOk = canWarpToSystem(save.ship, { x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 1 });
   assert.equal(warpOk.ok, true);

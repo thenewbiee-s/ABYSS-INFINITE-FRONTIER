@@ -298,7 +298,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <div
             ref={joyRef}
             aria-label="Virtual Movement Joystick"
-            className="pointer-events-auto touch-none fixed bottom-16 left-3 z-20 w-24 h-24 rounded-full bg-[#070d1a]/70 border-2 border-sky-400/50 flex items-center justify-center"
+            className="pointer-events-auto touch-none fixed bottom-[76px] left-3 z-20 w-24 h-24 rounded-full bg-[#070d1a]/70 border-2 border-sky-400/50 flex items-center justify-center"
             onPointerDown={(e) => {
               if (joyPointerId.current !== null) return;
               joyPointerId.current = e.pointerId;
@@ -332,7 +332,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           </div>
 
           {/* Right Action Buttons */}
-          <div className="pointer-events-auto touch-none fixed bottom-16 right-3 z-20 grid grid-cols-2 gap-1.5">
+          <div className="pointer-events-auto touch-none fixed bottom-[76px] right-3 z-20 grid grid-cols-2 gap-1.5">
             {(telemetry.nearShip || inShip) && (
               <button
                 type="button"
@@ -402,7 +402,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       {/* Bottom Status Alerts + Hotbar / Build Dock */}
       <div className="relative z-10 flex flex-col items-center gap-1.5 sm:gap-2.5">
         {telemetry.alertMessage && (
-          <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-[#0a162b]/92 border border-sky-400/70 text-[11px] sm:text-xs font-semibold tracking-wider text-sky-100 text-center">
+          <div
+            className={`px-3 sm:px-4 py-1 sm:py-1.5 bg-[#0a162b]/92 border border-sky-400/70 text-[10px] sm:text-xs font-semibold tracking-wider text-sky-100 text-center max-w-[92vw] ${
+              showTouchControls ? 'fixed top-28 left-1/2 -translate-x-1/2 z-10 pointer-events-none' : ''
+            }`}
+          >
             {telemetry.alertMessage}
           </div>
         )}
@@ -414,8 +418,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         )}
 
         {telemetry.canAutoLand && (
-          <div className="px-3.5 py-1 bg-[#091526]/90 border border-sky-400 text-xs font-semibold text-sky-200">
-            AUTO-LANDING SEQUENCE ENGAGED — RELEASE THRUST
+          <div
+            className={`px-3.5 py-1 bg-[#091526]/90 border border-sky-400 text-[10px] sm:text-xs font-semibold text-sky-200 text-center max-w-[92vw] ${
+              showTouchControls ? 'fixed top-36 left-1/2 -translate-x-1/2 z-10 pointer-events-none' : ''
+            }`}
+          >
+            {showTouchControls ? 'LANDING ZONE READY — RELEASE THRUST TO PARK' : 'LANDING ZONE READY — PRESS [L] OR RELEASE THRUST TO PARK'}
           </div>
         )}
 

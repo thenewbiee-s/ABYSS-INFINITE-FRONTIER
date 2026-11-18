@@ -482,11 +482,11 @@ export function createSpacecraftModel(
   for (const [gx, gy, gz] of strutCoords) {
     const sg = new THREE.Group();
     sg.position.set(gx, gy, gz);
-    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 8), darkMetal);
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.7, 8), darkMetal);
     strut.position.y = -0.35;
     sg.add(strut);
-    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.1, 8), accentMat);
-    pad.position.y = -0.67;
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.12, 10), accentMat);
+    pad.position.y = -0.66;
     sg.add(pad);
     gearGroup.add(sg);
     gearStruts.push(sg);
@@ -531,6 +531,8 @@ export interface CreatureRig {
   body: THREE.Group;
   legs: THREE.Group[];
   wings: THREE.Group[];
+  tentacles: THREE.Group[];
+  tailFin?: THREE.Group;
   species: CreatureSpecies;
   phase: number;
 }
@@ -542,90 +544,224 @@ export function createAlienCreatureModel(species: CreatureSpecies): CreatureRig 
 
   const skinMat = new THREE.MeshStandardMaterial({
     color: species.primaryColor,
-    roughness: 0.62,
-    metalness: 0.1,
+    roughness: 0.58,
+    metalness: 0.12,
     emissive: species.bioluminescent ? species.primaryColor : '#000000',
-    emissiveIntensity: species.bioluminescent ? 0.35 : 0,
+    emissiveIntensity: species.bioluminescent ? 0.42 : 0,
   });
   const crestMat = new THREE.MeshStandardMaterial({
     color: species.secondaryColor,
-    roughness: 0.35,
-    metalness: 0.25,
+    roughness: 0.34,
+    metalness: 0.28,
     emissive: species.bioluminescent ? species.secondaryColor : '#000000',
-    emissiveIntensity: species.bioluminescent ? 0.45 : 0,
+    emissiveIntensity: species.bioluminescent ? 0.55 : 0,
   });
   const eyeMat = new THREE.MeshBasicMaterial({ color: species.eyeColor });
 
   const s = species.scale;
-  const torsoY = species.bodyType === 'flyer' || species.bodyType === 'floater' ? 2.4 : 0.75 * s;
-
-  // Torso
-  const torso = new THREE.Mesh(new THREE.SphereGeometry(0.45 * s, 12, 10), skinMat);
-  torso.scale.set(0.85, 0.75, 1.45);
-  torso.position.y = torsoY;
-  torso.castShadow = true;
-  body.add(torso);
-
-  // Dorsal spine plates
-  for (let i = 0; i < 3; i++) {
-    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.11 * s, 0.34 * s, 6), crestMat);
-    fin.position.set(0, torsoY + 0.32 * s, (-0.3 + i * 0.32) * s);
-    fin.rotation.x = -0.3;
-    body.add(fin);
-  }
-
-  // Head + Eyes
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.36 * s, 0.3 * s, 0.46 * s), skinMat);
-  head.position.set(0, torsoY + 0.22 * s, -0.7 * s);
-  body.add(head);
-
-  const eyeGeo = new THREE.SphereGeometry(0.065 * s, 8, 8);
-  const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-  eyeL.position.set(-0.14 * s, torsoY + 0.26 * s, -0.9 * s);
-  body.add(eyeL);
-  const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-  eyeR.position.set(0.14 * s, torsoY + 0.26 * s, -0.9 * s);
-  body.add(eyeR);
-
   const legs: THREE.Group[] = [];
   const wings: THREE.Group[] = [];
+  const tentacles: THREE.Group[] = [];
+  let tailFin: THREE.Group | undefined;
 
-  if (species.bodyType === 'flyer') {
-    const wingGeo = new THREE.BoxGeometry(1.4 * s, 0.05 * s, 0.55 * s);
-    const wL = new THREE.Group();
-    wL.position.set(-0.3 * s, torsoY + 0.1 * s, 0);
-    const wLm = new THREE.Mesh(wingGeo, crestMat);
-    wLm.position.x = -0.7 * s;
-    wL.add(wLm);
-    body.add(wL);
-    wings.push(wL);
+  if (species.bodyType === 'floater') {
+    // Bioluminescent jellyfish / atmospheric gasbag with dangling tendrils
+    const hoverY = 2.6;
+    const bell = new THREE.Mesh(
+      new THREE.SphereGeometry(0.68 * s, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62),
+      new THREE.MeshPhysicalMaterial({
+        color: species.primaryColor,
+        emissive: species.primaryColor,
+        emissiveIntensity: 0.55,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.85,
+      })
+    );
+    bell.position.y = hoverY;
+    bell.castShadow = true;
+    body.add(bell);
 
-    const wR = new THREE.Group();
-    wR.position.set(0.3 * s, torsoY + 0.1 * s, 0);
-    const wRm = new THREE.Mesh(wingGeo, crestMat);
-    wRm.position.x = 0.7 * s;
-    wR.add(wRm);
-    body.add(wR);
-    wings.push(wR);
-  } else if (species.bodyType !== 'floater' && species.bodyType !== 'aquatic') {
-    const legCount = species.bodyType === 'biped' ? 2 : species.bodyType === 'crawler' ? 6 : 4;
-    const legGeo = new THREE.CapsuleGeometry(0.08 * s, 0.52 * s, 4, 6);
-    for (let i = 0; i < legCount; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const row = Math.floor(i / 2);
-      const zOff = legCount === 2 ? 0 : (-0.35 + row * (0.7 / Math.max(1, legCount / 2 - 1))) * s;
-      const legPivot = new THREE.Group();
-      legPivot.position.set(side * 0.34 * s, torsoY - 0.15 * s, zOff);
-      const lm = new THREE.Mesh(legGeo, crestMat);
-      lm.position.y = -0.3 * s;
-      lm.castShadow = true;
-      legPivot.add(lm);
-      body.add(legPivot);
-      legs.push(legPivot);
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.28 * s, 0), eyeMat);
+    core.position.y = hoverY - 0.1 * s;
+    body.add(core);
+
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.64 * s, 0.06 * s, 8, 20), crestMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = hoverY - 0.14 * s;
+    body.add(rim);
+
+    const tentacleGeo = new THREE.CapsuleGeometry(0.045 * s, 1.05 * s, 4, 6);
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      const tPivot = new THREE.Group();
+      tPivot.position.set(Math.cos(ang) * 0.38 * s, hoverY - 0.18 * s, Math.sin(ang) * 0.38 * s);
+      const tMesh = new THREE.Mesh(tentacleGeo, crestMat);
+      tMesh.position.y = -0.58 * s;
+      tPivot.add(tMesh);
+      body.add(tPivot);
+      tentacles.push(tPivot);
+    }
+  } else if (species.bodyType === 'aquatic') {
+    // Streamlined leviathan / alien swimmer with pectoral & caudal tail fins
+    const swimY = 0.7 * s;
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.42 * s, 14, 10), skinMat);
+    torso.scale.set(0.75, 0.85, 1.85);
+    torso.position.y = swimY;
+    torso.castShadow = true;
+    body.add(torso);
+
+    const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.12 * s, 0.65 * s, 4), crestMat);
+    dorsal.position.set(0, swimY + 0.42 * s, 0.05 * s);
+    dorsal.rotation.x = -0.45;
+    body.add(dorsal);
+
+    // Pectoral fins
+    for (const side of [-1, 1]) {
+      const pPivot = new THREE.Group();
+      pPivot.position.set(side * 0.28 * s, swimY - 0.05 * s, -0.25 * s);
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.65 * s, 0.04 * s, 0.34 * s), crestMat);
+      fin.position.x = side * 0.34 * s;
+      fin.rotation.y = side * -0.35;
+      pPivot.add(fin);
+      body.add(pPivot);
+      wings.push(pPivot);
+    }
+
+    // Articulated caudal tail fin
+    tailFin = new THREE.Group();
+    tailFin.position.set(0, swimY, 0.72 * s);
+    const tailBlade = new THREE.Mesh(new THREE.ConeGeometry(0.38 * s, 0.85 * s, 4), crestMat);
+    tailBlade.rotation.x = Math.PI / 2;
+    tailBlade.scale.set(0.18, 1.0, 1.2);
+    tailBlade.position.z = 0.42 * s;
+    tailFin.add(tailBlade);
+    body.add(tailFin);
+
+    // Eyes
+    const eyeGeo = new THREE.SphereGeometry(0.06 * s, 8, 8);
+    for (const side of [-1, 1]) {
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(side * 0.22 * s, swimY + 0.1 * s, -0.58 * s);
+      body.add(eye);
+    }
+  } else {
+    const torsoY = species.bodyType === 'flyer' ? 2.5 : species.bodyType === 'crawler' ? 0.48 * s : 0.78 * s;
+
+    // Torso
+    const torso = new THREE.Mesh(new THREE.SphereGeometry(0.45 * s, 12, 10), skinMat);
+    if (species.bodyType === 'crawler') {
+      torso.scale.set(1.05, 0.55, 1.65);
+    } else if (species.bodyType === 'biped') {
+      torso.scale.set(0.75, 0.95, 1.25);
+    } else {
+      torso.scale.set(0.88, 0.78, 1.5);
+    }
+    torso.position.y = torsoY;
+    torso.castShadow = true;
+    body.add(torso);
+
+    // Dorsal spine plates / shell segments
+    const plateCount = species.bodyType === 'crawler' ? 4 : 3;
+    for (let i = 0; i < plateCount; i++) {
+      const fin =
+        species.bodyType === 'crawler'
+          ? new THREE.Mesh(new THREE.BoxGeometry(0.55 * s, 0.14 * s, 0.24 * s), crestMat)
+          : new THREE.Mesh(new THREE.ConeGeometry(0.12 * s, 0.38 * s, 6), crestMat);
+      fin.position.set(0, torsoY + (species.bodyType === 'crawler' ? 0.24 : 0.34) * s, (-0.35 + i * 0.28) * s);
+      if (species.bodyType !== 'crawler') fin.rotation.x = -0.35;
+      body.add(fin);
+    }
+
+    // Neck + Head + Horns/Mandibles
+    const neckLen = species.bodyType === 'quadruped' && species.scale > 1.35 ? 0.45 * s : 0;
+    const head = new THREE.Mesh(
+      species.bodyType === 'flyer'
+        ? new THREE.ConeGeometry(0.22 * s, 0.58 * s, 6)
+        : new THREE.BoxGeometry(0.36 * s, 0.28 * s, 0.46 * s),
+      skinMat
+    );
+    if (species.bodyType === 'flyer') head.rotation.x = -Math.PI / 2;
+    head.position.set(0, torsoY + 0.22 * s + neckLen * 0.65, -0.72 * s);
+    body.add(head);
+
+    if (species.bodyType === 'quadruped' && neckLen > 0) {
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14 * s, 0.2 * s, neckLen + 0.25 * s, 8), skinMat);
+      neck.position.set(0, torsoY + 0.2 * s, -0.52 * s);
+      neck.rotation.x = 0.45;
+      body.add(neck);
+    }
+
+    // Mandibles or horns
+    for (const side of [-1, 1]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.05 * s, 0.28 * s, 5), crestMat);
+      if (species.bodyType === 'crawler') {
+        horn.rotation.x = -Math.PI / 2;
+        horn.rotation.z = side * 0.35;
+        horn.position.set(side * 0.14 * s, torsoY + 0.12 * s, -0.95 * s);
+      } else {
+        horn.rotation.z = side * -0.4;
+        horn.position.set(side * 0.15 * s, torsoY + 0.4 * s + neckLen * 0.65, -0.68 * s);
+      }
+      body.add(horn);
+    }
+
+    // Eyes
+    const eyeGeo = new THREE.SphereGeometry(0.065 * s, 8, 8);
+    for (const side of [-1, 1]) {
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(side * 0.14 * s, torsoY + 0.26 * s + neckLen * 0.65, -0.92 * s);
+      body.add(eye);
+    }
+
+    // Counter-balance tail for quadruped / biped / flyer
+    if (species.bodyType !== 'crawler') {
+      tailFin = new THREE.Group();
+      tailFin.position.set(0, torsoY + 0.05 * s, 0.6 * s);
+      const tailMesh = new THREE.Mesh(new THREE.ConeGeometry(0.13 * s, 0.72 * s, 6), crestMat);
+      tailMesh.rotation.x = Math.PI / 2 + 0.25;
+      tailMesh.position.z = 0.32 * s;
+      tailFin.add(tailMesh);
+      body.add(tailFin);
+    }
+
+    if (species.bodyType === 'flyer') {
+      const wingGeo = new THREE.BoxGeometry(1.45 * s, 0.05 * s, 0.58 * s);
+      for (const side of [-1, 1]) {
+        const wg = new THREE.Group();
+        wg.position.set(side * 0.3 * s, torsoY + 0.1 * s, 0);
+        const wm = new THREE.Mesh(wingGeo, crestMat);
+        wm.position.x = side * 0.72 * s;
+        wm.rotation.y = side * -0.18;
+        wg.add(wm);
+        body.add(wg);
+        wings.push(wg);
+      }
+    } else {
+      const legCount = species.bodyType === 'biped' ? 2 : species.bodyType === 'crawler' ? 6 : 4;
+      const legLen = species.bodyType === 'crawler' ? 0.34 * s : 0.54 * s;
+      const legGeo = new THREE.CapsuleGeometry(0.075 * s, legLen, 4, 6);
+      for (let i = 0; i < legCount; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const row = Math.floor(i / 2);
+        const zOff = legCount === 2 ? 0 : (-0.38 + row * (0.76 / Math.max(1, legCount / 2 - 1))) * s;
+        const legPivot = new THREE.Group();
+        legPivot.position.set(side * (species.bodyType === 'crawler' ? 0.42 : 0.34) * s, torsoY - 0.12 * s, zOff);
+        const lm = new THREE.Mesh(legGeo, crestMat);
+        lm.position.y = -legLen * 0.56;
+        if (species.bodyType === 'crawler') {
+          lm.rotation.z = side * 0.45;
+          lm.position.x = side * 0.12 * s;
+        }
+        lm.castShadow = true;
+        legPivot.add(lm);
+        body.add(legPivot);
+        legs.push(legPivot);
+      }
     }
   }
 
-  return { root, body, legs, wings, species, phase: Math.random() * Math.PI * 2 };
+  return { root, body, legs, wings, tentacles, tailFin, species, phase: Math.random() * Math.PI * 2 };
 }
 
 export function createFloraMesh(flora: FloraSpecies): THREE.Group {
@@ -638,11 +774,16 @@ export function createFloraMesh(flora: FloraSpecies): THREE.Group {
   });
   const canopyMat = new THREE.MeshStandardMaterial({
     color: flora.canopyColor,
-    roughness: 0.5,
-    metalness: 0.15,
-    emissive: flora.style === 'biolum' || flora.style === 'crystal' || flora.style === 'mushroom' ? flora.glowColor : '#000000',
-    emissiveIntensity: flora.style === 'biolum' || flora.style === 'crystal' ? 0.55 : 0.2,
+    roughness: 0.46,
+    metalness: 0.18,
+    emissive:
+      flora.style === 'biolum' || flora.style === 'crystal' || flora.style === 'mushroom' || flora.style === 'flower'
+        ? flora.glowColor
+        : '#000000',
+    emissiveIntensity:
+      flora.style === 'biolum' || flora.style === 'crystal' ? 0.65 : flora.style === 'flower' ? 0.35 : 0.18,
   });
+  const glowMat = new THREE.MeshBasicMaterial({ color: flora.glowColor });
 
   if (flora.style === 'crystal') {
     for (let i = 0; i < 4; i++) {
@@ -653,6 +794,21 @@ export function createFloraMesh(flora: FloraSpecies): THREE.Group {
       shard.castShadow = true;
       group.add(shard);
     }
+    const coreShard = new THREE.Mesh(new THREE.OctahedronGeometry(0.32 * s, 0), glowMat);
+    coreShard.position.y = 3.6 * s;
+    coreShard.userData.spinPart = true;
+    group.add(coreShard);
+  } else if (flora.style === 'frozen') {
+    // Faceted ice-fern pine spire + frost rings
+    const trunk = new THREE.Mesh(new THREE.ConeGeometry(0.45 * s, 2.8 * s, 6), trunkMat);
+    trunk.position.y = 1.4 * s;
+    group.add(trunk);
+    for (let tier = 0; tier < 3; tier++) {
+      const tierMesh = new THREE.Mesh(new THREE.ConeGeometry((1.25 - tier * 0.3) * s, 1.15 * s, 6), canopyMat);
+      tierMesh.position.y = (1.35 + tier * 0.85) * s;
+      tierMesh.castShadow = true;
+      group.add(tierMesh);
+    }
   } else if (flora.style === 'mushroom') {
     const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.35 * s, 2.1 * s, 8), trunkMat);
     stem.position.y = 1.05 * s;
@@ -662,10 +818,61 @@ export function createFloraMesh(flora: FloraSpecies): THREE.Group {
     cap.position.y = 1.95 * s;
     cap.castShadow = true;
     group.add(cap);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.08 * s, 0.08 * s, 6, 16), canopyMat);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.08 * s, 0.08 * s, 6, 16), glowMat);
     rim.rotation.x = Math.PI / 2;
     rim.position.y = 1.95 * s;
     group.add(rim);
+    // Baby side toadstool
+    const miniStem = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.14 * s, 0.85 * s, 6), trunkMat);
+    miniStem.position.set(0.72 * s, 0.42 * s, 0.35 * s);
+    group.add(miniStem);
+    const miniCap = new THREE.Mesh(new THREE.SphereGeometry(0.42 * s, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.52), canopyMat);
+    miniCap.position.set(0.72 * s, 0.82 * s, 0.35 * s);
+    group.add(miniCap);
+  } else if (flora.style === 'flower') {
+    // Giant alien blossom petals around glowing stamen core
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * s, 0.28 * s, 2.0 * s, 8), trunkMat);
+    stalk.position.y = 1.0 * s;
+    stalk.castShadow = true;
+    group.add(stalk);
+    const stamen = new THREE.Mesh(new THREE.SphereGeometry(0.36 * s, 10, 8), glowMat);
+    stamen.position.y = 2.15 * s;
+    group.add(stamen);
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      const petal = new THREE.Mesh(new THREE.ConeGeometry(0.42 * s, 1.25 * s, 5), canopyMat);
+      petal.position.set(Math.cos(ang) * 0.65 * s, 2.05 * s, Math.sin(ang) * 0.65 * s);
+      petal.rotation.order = 'YXZ';
+      petal.rotation.y = -ang;
+      petal.rotation.z = -1.1;
+      petal.castShadow = true;
+      group.add(petal);
+    }
+  } else if (flora.style === 'biolum') {
+    // Curved alien stalks with hanging glowing spore lanterns
+    for (let b = 0; b < 3; b++) {
+      const ang = (b / 3) * Math.PI * 2;
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * s, 0.16 * s, (2.2 + b * 0.35) * s, 6), trunkMat);
+      branch.position.set(Math.cos(ang) * 0.42 * s, (1.1 + b * 0.15) * s, Math.sin(ang) * 0.42 * s);
+      branch.rotation.z = -Math.cos(ang) * 0.38;
+      branch.rotation.x = Math.sin(ang) * 0.38;
+      group.add(branch);
+      const lantern = new THREE.Mesh(new THREE.OctahedronGeometry(0.32 * s, 1), glowMat);
+      lantern.position.set(Math.cos(ang) * 0.9 * s, (2.0 + b * 0.25) * s, Math.sin(ang) * 0.9 * s);
+      group.add(lantern);
+    }
+  } else if (flora.style === 'jungle') {
+    // Tall alien rainforest tree with multi-tier broad canopy fronds
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.45 * s, 3.6 * s, 8), trunkMat);
+    trunk.position.y = 1.8 * s;
+    trunk.castShadow = true;
+    group.add(trunk);
+    for (let tier = 0; tier < 2; tier++) {
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry((1.4 - tier * 0.35) * s, (1.6 - tier * 0.4) * s, 0.45 * s, 9), canopyMat);
+      disc.position.y = (3.1 + tier * 0.85) * s;
+      disc.castShadow = true;
+      group.add(disc);
+    }
   } else if (flora.style === 'desert') {
     const col = new THREE.Mesh(new THREE.CapsuleGeometry(0.26 * s, 1.8 * s, 4, 8), canopyMat);
     col.position.y = 1.05 * s;
@@ -675,6 +882,9 @@ export function createFloraMesh(flora: FloraSpecies): THREE.Group {
     arm.position.set(0.45 * s, 1.3 * s, 0);
     arm.rotation.z = -0.6;
     group.add(arm);
+    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.22 * s, 8, 6), glowMat);
+    bloom.position.y = 2.25 * s;
+    group.add(bloom);
   } else if (flora.style === 'ruin' || flora.style === 'machine') {
     const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.2 * s, 0.4 * s, 1.2 * s), trunkMat);
     plinth.position.y = 0.2 * s;
@@ -683,11 +893,17 @@ export function createFloraMesh(flora: FloraSpecies): THREE.Group {
     pillar.position.y = 1.8 * s;
     pillar.castShadow = true;
     group.add(pillar);
-    const glyph = new THREE.Mesh(new THREE.OctahedronGeometry(0.35 * s, 0), canopyMat);
-    glyph.position.y = 3.8 * s;
+    const glyph = new THREE.Mesh(new THREE.OctahedronGeometry(0.38 * s, 0), glowMat);
+    glyph.position.y = 3.9 * s;
+    glyph.userData.spinPart = true;
     group.add(glyph);
+  } else if (flora.style === 'sparse') {
+    const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.72 * s, 0), canopyMat);
+    bush.position.y = 0.5 * s;
+    bush.scale.set(1.2, 0.75, 1.1);
+    group.add(bush);
   } else {
-    // Lush / Jungle / Biolum / Flower tree
+    // Lush alien canopy tree
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * s, 0.34 * s, 2.6 * s, 8), trunkMat);
     trunk.position.y = 1.3 * s;
     trunk.castShadow = true;

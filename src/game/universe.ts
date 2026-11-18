@@ -4,6 +4,7 @@ import {
   CreatureSpecies,
   FactionId,
   FloraSpecies,
+  PlanetArchetypeDef,
   PlanetArchetypeId,
   PlanetProfile,
   RarityTier,
@@ -55,6 +56,134 @@ export function getRegionName(x: number, y: number, z: number, universeSeed: num
   return REGION_NAMES[h % REGION_NAMES.length];
 }
 
+function getBiomeFloraResource(style: PlanetArchetypeDef['floraStyle'], archetype: PlanetArchetypeId, rng: () => number): string {
+  if (archetype === 'ocean' || archetype === 'deep_ocean') return rng() > 0.35 ? 'kelp_sac' : 'oxygen';
+  if (archetype === 'radioactive') return rng() > 0.35 ? 'gamma_root' : 'carbon';
+  switch (style) {
+    case 'flower':
+    case 'lush':
+      return rng() > 0.4 ? 'star_bulb' : 'carbon';
+    case 'jungle':
+      return rng() > 0.45 ? 'nitrogen_gas' : 'star_bulb';
+    case 'mushroom':
+      return rng() > 0.35 ? 'fungal_mould' : 'biolum_spore';
+    case 'frozen':
+      return rng() > 0.35 ? 'frost_crystal' : 'oxygen';
+    case 'desert':
+      return rng() > 0.35 ? 'cactus_flesh' : 'solanium';
+    case 'biolum':
+      return rng() > 0.35 ? 'biolum_spore' : 'oxygen';
+    case 'crystal':
+      return rng() > 0.55 ? 'quantum_crystal' : 'cobalt';
+    case 'machine':
+      return rng() > 0.4 ? 'magnetized_ferrite' : 'chromatic_metal';
+    case 'ruin':
+      return rng() > 0.5 ? 'silicate_powder' : 'gold_deposit';
+    default:
+      return rng() > 0.5 ? 'carbon' : 'oxygen';
+  }
+}
+
+function getBiomeResourcePool(archetype: PlanetArchetypeId, rarity: RarityTier, rng: () => number): string[] {
+  const pool = new Set<string>(['ferrite_dust', 'carbon', 'oxygen', 'sodium', 'copper_ore', 'silicate_powder']);
+  if (rng() > 0.25) pool.add('cobalt');
+
+  switch (archetype) {
+    case 'paradise':
+    case 'tropical':
+    case 'jungle':
+    case 'giant_forest':
+    case 'alien_flower':
+    case 'terraforming_exp':
+      pool.add('star_bulb');
+      pool.add('nitrogen_gas');
+      pool.add('biolum_spore');
+      break;
+    case 'frozen':
+    case 'ice_crystal':
+      pool.add('frost_crystal');
+      pool.add('radon_gas');
+      pool.add('silver_vein');
+      break;
+    case 'volcanic':
+    case 'lava':
+      pool.add('basalt_shard');
+      pool.add('solanium');
+      pool.add('sulphurine');
+      pool.add('cadmium');
+      break;
+    case 'desert':
+    case 'rocky_desert':
+    case 'canyon':
+      pool.add('cactus_flesh');
+      pool.add('sulphurine');
+      pool.add('solanium');
+      pool.add('gold_deposit');
+      break;
+    case 'ocean':
+    case 'deep_ocean':
+      pool.add('kelp_sac');
+      pool.add('nitrogen_gas');
+      pool.add('silver_vein');
+      break;
+    case 'swamp':
+    case 'mushroom':
+    case 'toxic':
+    case 'acid_rain':
+      pool.add('fungal_mould');
+      pool.add('mordite');
+      pool.add('nitrogen_gas');
+      break;
+    case 'radioactive':
+      pool.add('gamma_root');
+      pool.add('radon_gas');
+      pool.add('gold_deposit');
+      break;
+    case 'bioluminescent':
+    case 'giant_cave':
+    case 'dark':
+      pool.add('biolum_spore');
+      pool.add('silver_vein');
+      pool.add('cobalt');
+      break;
+    case 'metallic':
+    case 'machine_world':
+    case 'high_gravity':
+      pool.add('magnetized_ferrite');
+      pool.add('gold_deposit');
+      pool.add('silver_vein');
+      if (archetype === 'machine_world') pool.add('machine_core');
+      break;
+    case 'extreme_storm':
+    case 'exotic_anomaly':
+    case 'floating_island':
+    case 'crystal':
+    case 'low_gravity':
+      pool.add('storm_crystal');
+      pool.add('quantum_crystal');
+      pool.add('indium');
+      if (rarity === 'Exotic' || rarity === 'Mythic' || rng() > 0.5) pool.add('gravitino_orb');
+      break;
+    case 'ancient_ruins':
+    case 'abandoned_colony':
+      pool.add('gold_deposit');
+      pool.add('ancient_relic');
+      pool.add('gravitino_orb');
+      break;
+    default:
+      pool.add('basalt_shard');
+      pool.add('silver_vein');
+      break;
+  }
+
+  if (rarity === 'Rare' || rarity === 'Exotic' || rng() > 0.5) pool.add('emeril');
+  if (rarity === 'Exotic' || rarity === 'Mythic' || rng() > 0.75) {
+    pool.add('indium');
+    pool.add('quantum_crystal');
+  }
+  return Array.from(pool);
+}
+
 function generateFloraSpecies(
   rng: () => number,
   archetype: PlanetArchetypeId,
@@ -62,21 +191,33 @@ function generateFloraSpecies(
   accent: string
 ): FloraSpecies[] {
   const def = PLANET_ARCHETYPES[archetype];
-  const count = def.floraStyle === 'sparse' ? 2 : 3 + Math.floor(rng() * 2);
-  const resPool = ['carbon', 'oxygen', 'sodium', 'biolum_spore', 'ferrite_dust'];
+  const count = def.floraStyle === 'sparse' ? 2 : 3 + Math.floor(rng() * 3);
+  const styleLabel: Record<PlanetArchetypeDef['floraStyle'], string> = {
+    lush: 'Canopy',
+    jungle: 'Frond',
+    mushroom: 'Mycelia',
+    crystal: 'Spire',
+    desert: 'Agave',
+    frozen: 'Cryo-Fern',
+    biolum: 'Lantern',
+    flower: 'Blossom',
+    ruin: 'Obelisk',
+    machine: 'Pylon',
+    sparse: 'Shrub',
+  };
   const list: FloraSpecies[] = [];
   for (let i = 0; i < count; i++) {
-    const scale = 0.7 + rng() * 1.4;
-    const rarity: RarityTier = i === count - 1 && rng() > 0.6 ? 'Rare' : rng() > 0.5 ? 'Uncommon' : 'Common';
+    const scale = 0.75 + rng() * 1.45;
+    const rarity: RarityTier = i === count - 1 && rng() > 0.55 ? 'Rare' : rng() > 0.45 ? 'Uncommon' : 'Common';
     list.push({
       id: `flora_${i}_${Math.floor(rng() * 99999)}`,
-      name: `${generateProceduralName(rng)} ${def.floraStyle === 'mushroom' ? 'Mycelia' : def.floraStyle === 'crystal' ? 'Spire' : 'Flora'}`,
+      name: `${generateProceduralName(rng)} ${styleLabel[def.floraStyle] || 'Flora'}`,
       style: def.floraStyle,
       scale,
       trunkColor: planetColor,
       canopyColor: i % 2 === 0 ? accent : def.groundMid,
       glowColor: accent,
-      primaryResource: resPool[Math.floor(rng() * resPool.length)],
+      primaryResource: getBiomeFloraResource(def.floraStyle, archetype, rng),
       rarity,
     });
   }
@@ -86,23 +227,53 @@ function generateFloraSpecies(
 function generateCreatureSpecies(rng: () => number, archetype: PlanetArchetypeId): CreatureSpecies[] {
   const def = PLANET_ARCHETYPES[archetype];
   if (!def.landable) return [];
-  const count = def.hazard === 'void' ? 2 : 3 + Math.floor(rng() * 3);
-  const bodies: CreatureSpecies['bodyType'][] = def.hasWater
-    ? ['quadruped', 'biped', 'flyer', 'aquatic', 'crawler', 'floater']
-    : ['quadruped', 'biped', 'flyer', 'crawler', 'floater'];
+  const count = def.hazard === 'void' ? 3 : 4 + Math.floor(rng() * 3);
+  const hasRealWater = def.hasWater && !def.waterIsLava;
+
+  // Bias body types to the planet's biome so other planets feel ecologically distinct!
+  let preferredPool: CreatureSpecies['bodyType'][];
+  if (archetype === 'ocean' || archetype === 'deep_ocean') {
+    preferredPool = ['aquatic', 'aquatic', 'flyer', 'floater', 'crawler'];
+  } else if (archetype === 'bioluminescent' || archetype === 'giant_cave' || archetype === 'exotic_anomaly' || archetype === 'floating_island') {
+    preferredPool = ['floater', 'flyer', 'biped', 'crawler', ...(hasRealWater ? (['aquatic'] as const) : [])];
+  } else if (archetype === 'mushroom' || archetype === 'swamp' || archetype === 'toxic' || archetype === 'acid_rain') {
+    preferredPool = ['crawler', 'floater', 'quadruped', 'biped', ...(hasRealWater ? (['aquatic'] as const) : [])];
+  } else if (archetype === 'desert' || archetype === 'volcanic' || archetype === 'lava' || archetype === 'metallic' || archetype === 'machine_world') {
+    preferredPool = ['crawler', 'quadruped', 'biped', 'flyer', 'floater'];
+  } else {
+    preferredPool = hasRealWater
+      ? ['quadruped', 'biped', 'flyer', 'aquatic', 'crawler', 'floater']
+      : ['quadruped', 'biped', 'flyer', 'crawler', 'floater'];
+  }
 
   const list: CreatureSpecies[] = [];
-  const palette = ['#f59e0b', '#38bdf8', '#a855f7', '#10b981', '#fb7185', '#eab308', '#22d3ee', '#f97316'];
+  const palette = [
+    '#f59e0b', '#38bdf8', '#a855f7', '#10b981', '#fb7185',
+    '#eab308', '#22d3ee', '#f97316', '#c084fc', '#34d399',
+  ];
 
   for (let i = 0; i < count; i++) {
-    const bodyType = bodies[Math.floor(rng() * bodies.length)];
+    // Guarantee aquatic diversity on water worlds & distinct mix per index
+    let bodyType: CreatureSpecies['bodyType'];
+    if (i === 0 && hasRealWater) bodyType = 'aquatic';
+    else if (i === 1 && (archetype === 'bioluminescent' || archetype === 'exotic_anomaly' || archetype === 'mushroom')) bodyType = 'floater';
+    else bodyType = preferredPool[(i + Math.floor(rng() * preferredPool.length)) % preferredPool.length];
+
     const isPredator = i === count - 1 && rng() > 0.35;
+    const isGuardian = !isPredator && (archetype === 'ancient_ruins' || archetype === 'machine_world') && rng() > 0.55;
     const temperament: CreatureSpecies['temperament'] = isPredator
       ? 'predator'
-      : rng() > 0.6
-        ? 'skittish'
-        : 'docile';
-    const scale = bodyType === 'quadruped' && rng() > 0.65 ? 1.5 + rng() * 0.9 : 0.65 + rng() * 0.8;
+      : isGuardian
+        ? 'guardian'
+        : rng() > 0.55
+          ? 'skittish'
+          : 'docile';
+    const scale =
+      bodyType === 'quadruped' && rng() > 0.55
+        ? 1.5 + rng() * 0.95
+        : bodyType === 'aquatic'
+          ? 0.9 + rng() * 1.1
+          : 0.7 + rng() * 0.85;
     const primary = palette[Math.floor(rng() * palette.length)];
     const secondary = palette[Math.floor(rng() * palette.length)];
     list.push({
@@ -113,14 +284,19 @@ function generateCreatureSpecies(rng: () => number, archetype: PlanetArchetypeId
       scale,
       primaryColor: primary,
       secondaryColor: secondary,
-      eyeColor: temperament === 'predator' ? '#ff2d55' : '#38bdf8',
-      bioluminescent: def.id === 'bioluminescent' || def.id === 'dark' || rng() > 0.65,
-      nocturnal: rng() > 0.72,
+      eyeColor: temperament === 'predator' ? '#ff2d55' : temperament === 'guardian' ? '#facc15' : '#38bdf8',
+      bioluminescent:
+        def.id === 'bioluminescent' ||
+        def.id === 'dark' ||
+        def.id === 'deep_ocean' ||
+        bodyType === 'floater' ||
+        rng() > 0.55,
+      nocturnal: rng() > 0.7,
       limbs: bodyType === 'crawler' ? 6 : bodyType === 'quadruped' ? 4 : 2,
-      speed: temperament === 'predator' ? 7.2 + rng() * 2.5 : 3.5 + rng() * 3.0,
-      hp: Math.round((temperament === 'predator' ? 85 : 50) * scale),
-      rarity: scale > 1.8 ? 'Rare' : rng() > 0.6 ? 'Uncommon' : 'Common',
-      diet: temperament === 'predator' ? 'Carnivore' : 'Herbivore',
+      speed: temperament === 'predator' ? 7.2 + rng() * 2.5 : bodyType === 'aquatic' ? 5.2 + rng() * 2.5 : 3.5 + rng() * 3.0,
+      hp: Math.round((temperament === 'predator' ? 85 : temperament === 'guardian' ? 110 : 50) * scale),
+      rarity: scale > 1.85 || bodyType === 'floater' ? 'Rare' : rng() > 0.55 ? 'Uncommon' : 'Common',
+      diet: temperament === 'predator' ? 'Carnivore' : bodyType === 'floater' ? 'Mineral Filter' : 'Herbivore',
     });
   }
   return list;
@@ -138,7 +314,7 @@ export function generatePlanetProfile(
     ? PLANET_ARCHETYPES[forcedArchetype]
     : ARCHETYPE_LIST[Math.floor(rng() * ARCHETYPE_LIST.length)];
 
-  // Keep starter-friendly radius range 170..260 so spherical curvature is obvious and travel is engaging
+  // Keep starter-friendly radius range 175..260 so spherical curvature is obvious and travel is engaging
   const radius = archetypeDef.id === 'gas_giant' ? 280 + rng() * 60 : 175 + rng() * 75;
   const orbitDistance = 950 + orbitIndex * 980 + rng() * 320;
   const orbitAngle = rng() * Math.PI * 2;
@@ -161,13 +337,7 @@ export function generatePlanetProfile(
   );
   const weather = archetypeDef.weathers[Math.floor(rng() * archetypeDef.weathers.length)];
 
-  const resourcePool = ['ferrite_dust', 'carbon', 'oxygen', 'sodium', 'cobalt'];
-  if (archetypeDef.rarity === 'Rare' || archetypeDef.rarity === 'Exotic' || rng() > 0.55) {
-    resourcePool.push('emeril');
-  }
-  if (archetypeDef.rarity === 'Exotic' || archetypeDef.rarity === 'Mythic' || rng() > 0.78) {
-    resourcePool.push('indium', 'quantum_crystal');
-  }
+  const resourcePool = getBiomeResourcePool(archetypeDef.id, archetypeDef.rarity, rng);
 
   const biomes = [
     `${archetypeDef.name.replace(' Planet', '')} Highlands`,

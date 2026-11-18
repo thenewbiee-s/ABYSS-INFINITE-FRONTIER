@@ -20,6 +20,7 @@ import {
   createPlanetRuntime,
   PlanetRuntime,
   populatePlanetSurfaceDetails,
+  samplePlanetMeshSurface,
 } from './planetWorld';
 import {
   canAffordBasePart,
@@ -498,12 +499,12 @@ export class AbyssEngine {
       populatePlanetSurfaceDetails(targetPlanet, detailDensity);
       const pCenter = targetPlanet.group.position;
 
-      // Ground player & ship cleanly at saved local coordinates or safe landing pole
+      // Ground player & ship cleanly on the exact rendered mesh surface
       const lp = save.playerLocalPos;
       const pDir = new THREE.Vector3(lp[0], lp[1], lp[2]).normalize();
       if (pDir.lengthSq() < 0.01) pDir.set(0, 0.968, 0.25).normalize();
-      const surfR = samplePlanetSurfaceRadius(targetPlanet.profile, pDir.x, pDir.y, pDir.z);
-      this.playerPos.copy(pCenter).addScaledVector(pDir, surfR + 0.1);
+      const surfR = samplePlanetMeshSurface(targetPlanet, pDir.x, pDir.y, pDir.z);
+      this.playerPos.copy(pCenter).addScaledVector(pDir, surfR + 0.05);
 
       // Initialize continuous tangent North orthogonal to pDir
       this.tangentRefNorth.set(0, 0, -1);
@@ -516,14 +517,20 @@ export class AbyssEngine {
       const sp = save.shipLocalPos;
       const sDir = new THREE.Vector3(sp[0], sp[1], sp[2]).normalize();
       if (sDir.lengthSq() < 0.01) sDir.set(0.05, 0.968, 0.26).normalize();
-      const shipSurfR = samplePlanetSurfaceRadius(targetPlanet.profile, sDir.x, sDir.y, sDir.z);
-      this.shipPos.copy(pCenter).addScaledVector(sDir, shipSurfR + 0.05);
-
-      _q1.setFromUnitVectors(_up, sDir);
-      this.shipQuat.copy(_q1);
+      const candidateShipPos = pCenter.clone().addScaledVector(sDir, targetPlanet.profile.radius + 30);
       this.shipLanded = save.playMode !== 'in_ship';
       this.shipLandedPlanetId = targetPlanet.profile.id;
       this.playMode = save.playMode === 'build_mode' ? 'on_foot' : save.playMode;
+      if (this.shipLanded) {
+        const parked = this.alignShipToSurface(targetPlanet, candidateShipPos, this.tangentRefNorth);
+        this.shipPos.copy(parked.pos);
+        this.shipQuat.copy(parked.quat);
+      } else {
+        const shipSurfR = samplePlanetMeshSurface(targetPlanet, sDir.x, sDir.y, sDir.z);
+        this.shipPos.copy(pCenter).addScaledVector(sDir, shipSurfR + 0.05);
+        _q1.setFromUnitVectors(_up, sDir);
+        this.shipQuat.copy(_q1);
+      }
 
       // Align camera cleanly behind player facing tangentNorth
       this.camCurrentPos
@@ -565,7 +572,7 @@ export class AbyssEngine {
     (this.sunMesh.material as THREE.MeshBasicMaterial).color.set(system.starColor);
     this.sunLight.color.set(system.starColor);
 
-    const subdiv = this.isSoftwareGl || this.isMobileDevice ? 4 : 5;
+    const subdiv = this.isSoftwareGl ? 10 : this.isMobileDevice ? 14 : 20;
     const density = this.getDetailDensity();
     for (let i = 0; i < system.planets.length; i++) {
       const p = system.planets[i];
@@ -588,9 +595,18 @@ export class AbyssEngine {
     // Spawn mineable asteroid belt between Planet 0 and Planet 1
     const p0 = system.planets[0]?.position ?? [0, 0, 0];
     const astGeo = new THREE.DodecahedronGeometry(3.8, 0);
-    const astResources = ['ferrite_dust', 'cobalt', 'emeril', 'quantum_crystal'];
-    for (let i = 0; i < 24; i++) {
-      const angle = (i / 24) * Math.PI * 2;
+    const astResources = [
+      'ferrite_dust',
+      'tritium_cluster',
+      'copper_ore',
+      'cobalt',
+      'silver_vein',
+      'gold_deposit',
+      'emeril',
+      'quantum_crystal',
+    ];
+    for (let i = 0; i < 28; i++) {
+      const angle = (i / 28) * Math.PI * 2;
       const dist = 520 + (i % 4) * 95;
       const pos = new THREE.Vector3(
         p0[0] + Math.cos(angle) * dist,
@@ -599,9 +615,9 @@ export class AbyssEngine {
       );
       const resId = astResources[i % astResources.length];
       const mat = new THREE.MeshStandardMaterial({
-        color: resId === 'quantum_crystal' ? '#a855f7' : resId === 'emeril' ? '#10b981' : '#64748b',
-        roughness: 0.72,
-        metalness: 0.25,
+        color: ITEMS[resId]?.color || '#64748b',
+        roughness: 0.68,
+        metalness: 0.3,
       });
       const mesh = new THREE.Mesh(astGeo, mat);
       mesh.position.copy(pos);
@@ -830,9 +846,12 @@ export class AbyssEngine {
     const starter = this.planetRuntimes[0];
     if (!starter) return;
     const pDir = new THREE.Vector3(0, 0.968, 0.25).normalize();
-    const r = samplePlanetSurfaceRadius(starter.profile, pDir.x, pDir.y, pDir.z);
-    this.playerPos.copy(starter.group.position).addScaledVector(pDir, r + 0.2);
-    this.shipPos.copy(starter.group.position).addScaledVector(pDir, r + 0.1).add(new THREE.Vector3(8, 0, 4));
+    const r = samplePlanetMeshSurface(starter, pDir.x, pDir.y, pDir.z);
+    this.playerPos.copy(starter.group.position).addScaledVector(pDir, r + 0.15);
+    const shipSpot = this.playerPos.clone().add(new THREE.Vector3(8, 0, 4));
+    const parked = this.alignShipToSurface(starter, shipSpot, this.tangentRefNorth);
+    this.shipPos.copy(parked.pos);
+    this.shipQuat.copy(parked.quat);
     this.playMode = 'on_foot';
     this.shipLanded = true;
     this.saveData.survival.health = 100;
@@ -1022,8 +1041,91 @@ export class AbyssEngine {
       }
     }
     const dir = _v1.copy(refPos).sub(best.group.position).normalize();
-    const surfR = samplePlanetSurfaceRadius(best.profile, dir.x, dir.y, dir.z);
+    const surfR =
+      bestDist < best.profile.radius * 2.5
+        ? samplePlanetMeshSurface(best, dir.x, dir.y, dir.z)
+        : samplePlanetSurfaceRadius(best.profile, dir.x, dir.y, dir.z);
     return { runtime: best, distCenter: bestDist, altitude: bestDist - surfR };
+  }
+
+  /**
+   * Align spacecraft 3 landing struts cleanly to rendered terrain triangles so all 3 pads touch ground flush
+   * without sinking or hovering, while preserving the ship's horizontal heading.
+   */
+  private alignShipToSurface(
+    planetRt: PlanetRuntime,
+    desiredWorldPos: THREE.Vector3,
+    headingFwdHint?: THREE.Vector3
+  ): { pos: THREE.Vector3; quat: THREE.Quaternion } {
+    const pCenter = planetRt.group.position;
+    const radialUp = desiredWorldPos.clone().sub(pCenter).normalize();
+
+    const curFwd = headingFwdHint
+      ? headingFwdHint.clone()
+      : new THREE.Vector3(0, 0, -1).applyQuaternion(this.shipQuat);
+    curFwd.addScaledVector(radialUp, -curFwd.dot(radialUp));
+    if (curFwd.lengthSq() < 1e-4) {
+      curFwd.set(0, 0, -1).addScaledVector(radialUp, radialUp.z);
+      if (curFwd.lengthSq() < 1e-4) curFwd.set(1, 0, 0);
+    }
+    curFwd.normalize();
+    const right = new THREE.Vector3().crossVectors(curFwd, radialUp).normalize();
+
+    const samplePoint = (rightOff: number, fwdOff: number): THREE.Vector3 => {
+      const dir = radialUp
+        .clone()
+        .multiplyScalar(planetRt.profile.radius)
+        .addScaledVector(right, rightOff)
+        .addScaledVector(curFwd, fwdOff)
+        .normalize();
+      const r = samplePlanetMeshSurface(planetRt, dir.x, dir.y, dir.z);
+      return pCenter.clone().addScaledVector(dir, r);
+    };
+
+    const pCenterSurf = samplePoint(0, 0);
+    const pNose = samplePoint(0, 1.9);
+    const pLeft = samplePoint(-1.4, -1.2);
+    const pRight = samplePoint(1.4, -1.2);
+
+    // Best-fit surface normal from the 3 landing gear pads (nose, rear-left, rear-right)
+    const surfNormal = new THREE.Vector3().crossVectors(
+      pLeft.clone().sub(pNose),
+      pRight.clone().sub(pNose)
+    );
+    if (surfNormal.dot(radialUp) < 0) surfNormal.negate();
+    if (surfNormal.lengthSq() < 1e-6) surfNormal.copy(radialUp);
+    surfNormal.normalize();
+
+    // Clamp excessive slope tilt to max ~26 deg from radialUp so parked ship never tips awkwardly on cliffs
+    const cosTilt = THREE.MathUtils.clamp(surfNormal.dot(radialUp), -1, 1);
+    const maxCos = Math.cos((26 * Math.PI) / 180);
+    if (cosTilt < maxCos) {
+      surfNormal.lerp(radialUp, 0.55).normalize();
+    }
+
+    const fwd = curFwd.clone().addScaledVector(surfNormal, -curFwd.dot(surfNormal)).normalize();
+    const adjRight = new THREE.Vector3().crossVectors(fwd, surfNormal).normalize();
+    const basis = new THREE.Matrix4().makeBasis(adjRight, surfNormal, fwd.clone().negate());
+    const quat = new THREE.Quaternion().setFromRotationMatrix(basis);
+
+    // Compute minimum radial lift so none of the 3 pads or fuselage center clips below terrain
+    let liftH = pCenterSurf.distanceTo(pCenter);
+    for (const [gx, gz] of [
+      [0, -1.9],
+      [-1.4, 1.2],
+      [1.4, 1.2],
+    ]) {
+      const padWorldOffset = new THREE.Vector3(gx, 0, gz).applyQuaternion(quat);
+      const padDir = pCenterSurf.clone().add(padWorldOffset).sub(pCenter).normalize();
+      const padGroundR = samplePlanetMeshSurface(planetRt, padDir.x, padDir.y, padDir.z);
+      // Solve r such that (pCenterSurfDir*r + padWorldOffset) has radius >= padGroundR
+      const radialProj = padWorldOffset.dot(radialUp);
+      const requiredCenterR = padGroundR - radialProj;
+      if (requiredCenterR > liftH) liftH = requiredCenterR;
+    }
+
+    const pos = pCenter.clone().addScaledVector(radialUp, liftH + 0.03);
+    return { pos, quat };
   }
 
   private tryPlaceStructure(): void {
@@ -1401,16 +1503,16 @@ export class AbyssEngine {
     this.playerVel.copy(vTan).addScaledVector(localUp, nextRad);
     this.playerPos.addScaledVector(this.playerVel, dt);
 
-    // Clamp to spherical surface
+    // Clamp cleanly to exact rendered triangle mesh surface (zero ground clipping!)
     const newDir = this.playerPos.clone().sub(pCenter).normalize();
-    const groundR = samplePlanetSurfaceRadius(planet, newDir.x, newDir.y, newDir.z);
+    const groundR = samplePlanetMeshSurface(nearest.runtime, newDir.x, newDir.y, newDir.z);
     const distFromCenter = this.playerPos.distanceTo(pCenter);
-    if (distFromCenter <= groundR + 0.04) {
+    if (distFromCenter <= groundR + 0.06) {
       if (!this.playerOnGround && nextRad < -4) {
         this.explorer.squashY = 0.78;
         this.audio.playImpact(false);
       }
-      this.playerPos.copy(pCenter).addScaledVector(newDir, groundR);
+      this.playerPos.copy(pCenter).addScaledVector(newDir, groundR + 0.02);
       if (this.playerVel.dot(newDir) < 0) {
         const rad = this.playerVel.dot(newDir);
         this.playerVel.addScaledVector(newDir, -rad);
@@ -1513,7 +1615,7 @@ export class AbyssEngine {
       .addScaledVector(newDir, 0.35);
 
     const camDirFromCenter = camDesired.clone().sub(pCenter).normalize();
-    const camMinR = samplePlanetSurfaceRadius(planet, camDirFromCenter.x, camDirFromCenter.y, camDirFromCenter.z) + 1.15;
+    const camMinR = samplePlanetMeshSurface(nearest.runtime, camDirFromCenter.x, camDirFromCenter.y, camDirFromCenter.z) + 1.25;
     if (camDesired.distanceTo(pCenter) < camMinR) {
       camDesired.copy(pCenter).addScaledVector(camDirFromCenter, camMinR);
     }
@@ -1714,7 +1816,13 @@ export class AbyssEngine {
         this.hitstopTimer = 0.045;
         this.audio.playImpact(true);
         this.spawnBurst(wp, '#f43f5e', 14, 9);
-        this.callbacks.onAddResource('biolum_spore', 2, 'combat');
+        const dropId =
+          c.species.bodyType === 'aquatic'
+            ? 'kelp_sac'
+            : c.species.bioluminescent
+              ? 'biolum_spore'
+              : 'mordite';
+        this.callbacks.onAddResource(dropId, 2, 'combat');
       }
     } else {
       this.miningTargetName = null;
@@ -1730,7 +1838,7 @@ export class AbyssEngine {
   private updateBuildPreview(planetRt: PlanetRuntime, forward: THREE.Vector3, up: THREE.Vector3): void {
     const placePos = this.playerPos.clone().addScaledVector(forward, 7.5);
     const dir = placePos.clone().sub(planetRt.group.position).normalize();
-    const surfR = samplePlanetSurfaceRadius(planetRt.profile, dir.x, dir.y, dir.z);
+    const surfR = samplePlanetMeshSurface(planetRt, dir.x, dir.y, dir.z);
     // Grid-quantized snap along local tangent coordinates
     const snappedPos = planetRt.group.position.clone().addScaledVector(dir, surfR);
 
@@ -1764,8 +1872,8 @@ export class AbyssEngine {
       if (tangent.lengthSq() < 0.01) tangent.set(0, 0, 1);
       const exitPos = this.shipPos.clone().addScaledVector(tangent, 5.5);
       const eDir = exitPos.clone().sub(pCenter).normalize();
-      const eR = samplePlanetSurfaceRadius(planet, eDir.x, eDir.y, eDir.z);
-      this.playerPos.copy(pCenter).addScaledVector(eDir, eR + 0.1);
+      const eR = samplePlanetMeshSurface(nearest.runtime, eDir.x, eDir.y, eDir.z);
+      this.playerPos.copy(pCenter).addScaledVector(eDir, eR + 0.08);
       this.playerVel.set(0, 0, 0);
       this.explorer.root.visible = true;
       this.audio.silenceLoops();
@@ -1890,35 +1998,42 @@ export class AbyssEngine {
       this.audio.playLaserBolt();
     }
 
-    // Automatic Planetary Landing Detection (NO E-key required!)
+    // Precision Planetary Landing & 3-Point Surface Parking
     const nextNearest = this.getNearestPlanet();
     const speed = this.shipVel.length();
     const dirFromCenter = this.shipPos.clone().sub(nextNearest.runtime.group.position).normalize();
-    const surfR = samplePlanetSurfaceRadius(nextNearest.runtime.profile, dirFromCenter.x, dirFromCenter.y, dirFromCenter.z);
+    const surfR = samplePlanetMeshSurface(nextNearest.runtime, dirFromCenter.x, dirFromCenter.y, dirFromCenter.z);
     const alt = this.shipPos.distanceTo(nextNearest.runtime.group.position) - surfR;
 
     const overWater =
-      nextNearest.runtime.profile.hasWater && surfR < nextNearest.runtime.profile.waterLevel + 0.5;
-    const canAutoLand =
+      nextNearest.runtime.profile.hasWater && surfR < nextNearest.runtime.profile.waterLevel + 0.45;
+    const manualLandRequest =
+      (this.justPressedKeys.has('KeyL') || this.justPressedKeys.has('KeyF')) &&
       this.shipTakeoffGrace <= 0 &&
       nextNearest.runtime.profile.landable &&
       !overWater &&
-      alt < 15 &&
-      speed < 75 &&
-      !thrustInput;
+      alt < 34;
+
+    const canAutoLand =
+      manualLandRequest ||
+      (this.shipTakeoffGrace <= 0 &&
+        nextNearest.runtime.profile.landable &&
+        !overWater &&
+        alt < 18 &&
+        speed < 85 &&
+        !thrustInput);
 
     if (canAutoLand || this.shipAutoLanding) {
       this.shipAutoLanding = true;
-      this.shipVel.multiplyScalar(Math.exp(-5 * dt));
-      const targetPos = nextNearest.runtime.group.position.clone().addScaledVector(dirFromCenter, surfR + 0.05);
-      this.shipPos.lerp(targetPos, 1 - Math.exp(-5.5 * dt));
-      _q1.setFromUnitVectors(_up, dirFromCenter);
-      this.shipQuat.slerp(_q1, 1 - Math.exp(-6 * dt));
+      this.shipVel.multiplyScalar(Math.exp(-7.5 * dt));
+      const parked = this.alignShipToSurface(nextNearest.runtime, this.shipPos);
+      this.shipPos.lerp(parked.pos, 1 - Math.exp(-6.5 * dt));
+      this.shipQuat.slerp(parked.quat, 1 - Math.exp(-7.5 * dt));
 
-      if (this.shipPos.distanceTo(targetPos) < 0.85) {
-        this.shipPos.copy(targetPos);
+      if (this.shipPos.distanceTo(parked.pos) < 0.75) {
+        this.shipPos.copy(parked.pos);
         this.shipVel.set(0, 0, 0);
-        this.shipQuat.copy(_q1);
+        this.shipQuat.copy(parked.quat);
         this.shipLanded = true;
         this.shipAutoLanding = false;
         this.shipLandedPlanetId = nextNearest.runtime.profile.id;
@@ -1943,10 +2058,16 @@ export class AbyssEngine {
         }
       }
     } else if (alt < 2.2) {
-      // Soft collision bounce off non-landing terrain / gas giant cloud deck
-      this.shipPos.copy(nextNearest.runtime.group.position).addScaledVector(dirFromCenter, surfR + 2.5);
-      const radV = this.shipVel.dot(dirFromCenter);
-      if (radV < 0) this.shipVel.addScaledVector(dirFromCenter, -radV * 1.4);
+      if (nextNearest.runtime.profile.landable && !overWater && speed < 92) {
+        // Gentle touchdown initiates clean surface parking instead of bouncing into orbit!
+        this.shipAutoLanding = true;
+        this.shipVel.multiplyScalar(0.35);
+      } else {
+        // Soft collision bounce off non-landing terrain / ocean / gas giant cloud deck
+        this.shipPos.copy(nextNearest.runtime.group.position).addScaledVector(dirFromCenter, surfR + 2.5);
+        const radV = this.shipVel.dot(dirFromCenter);
+        if (radV < 0) this.shipVel.addScaledVector(dirFromCenter, -radV * 1.15);
+      }
     }
 
     // Shield passive regen
@@ -2045,8 +2166,16 @@ export class AbyssEngine {
         const moveTan = north.clone().multiplyScalar(Math.cos(c.heading)).addScaledVector(east, Math.sin(c.heading));
         c.localPos.addScaledVector(moveTan, speed * dt);
         const newDir = c.localPos.clone().normalize();
-        const r = samplePlanetSurfaceRadius(planet, newDir.x, newDir.y, newDir.z);
-        const hover = c.species.bodyType === 'flyer' ? 8 + Math.sin(performance.now() * 0.003 + c.rig.phase) * 1.5 : 0.05;
+        const r = samplePlanetMeshSurface(nearest.runtime, newDir.x, newDir.y, newDir.z);
+        const nowSec = performance.now() * 0.003;
+        let hover = 0.03;
+        if (c.species.bodyType === 'flyer') {
+          hover = 7.5 + Math.sin(nowSec + c.rig.phase) * 1.6;
+        } else if (c.species.bodyType === 'floater') {
+          hover = 1.1 + Math.sin(nowSec * 0.8 + c.rig.phase) * 0.45;
+        } else if (c.species.bodyType === 'aquatic' && planet.hasWater && !planet.waterIsLava && r < planet.waterLevel - 0.4) {
+          hover = Math.max(0.35, (planet.waterLevel - r) * 0.52 + Math.sin(nowSec + c.rig.phase) * 0.25);
+        }
         c.localPos.copy(newDir).multiplyScalar(r + hover);
 
         c.rig.root.position.copy(c.localPos);
@@ -2054,16 +2183,28 @@ export class AbyssEngine {
         _q2.setFromAxisAngle(_up, c.heading + Math.PI);
         c.rig.root.quaternion.copy(_q1).multiply(_q2);
 
-        // Animate limbs/wings
+        // Animate limbs, wings, tentacles, and aquatic tail fins
         c.rig.phase += dt * speed * 1.8;
         for (let i = 0; i < c.rig.legs.length; i++) {
           c.rig.legs[i].rotation.x = Math.sin(c.rig.phase + i * Math.PI) * 0.55;
         }
         for (let i = 0; i < c.rig.wings.length; i++) {
           const sign = i === 0 ? 1 : -1;
-          c.rig.wings[i].rotation.z = Math.sin(c.rig.phase * 1.6) * 0.55 * sign;
+          c.rig.wings[i].rotation.z = Math.sin(c.rig.phase * 1.6) * 0.52 * sign;
+        }
+        for (let i = 0; i < c.rig.tentacles.length; i++) {
+          c.rig.tentacles[i].rotation.x = Math.sin(c.rig.phase * 0.7 + i * 1.1) * 0.28;
+          c.rig.tentacles[i].rotation.z = Math.cos(c.rig.phase * 0.6 + i * 0.9) * 0.22;
+        }
+        if (c.rig.tailFin) {
+          c.rig.tailFin.rotation.y = Math.sin(c.rig.phase * 1.8) * (c.species.bodyType === 'aquatic' ? 0.48 : 0.24);
         }
       }
+    }
+
+    // Spin levitating crystal cores & ancient glyphs gently
+    for (const part of nearest.runtime.spinParts) {
+      part.rotation.y += dt * 1.3;
     }
   }
 

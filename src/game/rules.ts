@@ -262,7 +262,14 @@ export function useConsumableItem(
   } else if (eff.type === 'hazard') {
     nextSurvival.hazardShield = Math.min(nextSurvival.maxHazardShield, nextSurvival.hazardShield + eff.amount);
     nextShip.shield = Math.min(nextShip.maxShield, nextShip.shield + eff.amount);
+    if (itemId === 'thermal_cell') {
+      nextSurvival.oxygen = Math.min(nextSurvival.maxOxygen, nextSurvival.oxygen + 40);
+    }
     message = `Recharged +${eff.amount}% Protection & Shields`;
+  } else if (eff.type === 'shield') {
+    nextShip.shield = Math.min(nextShip.maxShield, nextShip.shield + eff.amount);
+    nextShip.hull = Math.min(nextShip.maxHull, nextShip.hull + 45);
+    message = `Repaired +45 Ship Hull & +${eff.amount} Deflectors`;
   } else if (eff.type === 'launch_fuel') {
     nextShip.launchFuel = Math.min(100, nextShip.launchFuel + eff.amount);
     message = `Refueled +${eff.amount}% Launch Thrusters`;
@@ -402,19 +409,21 @@ export function createInitialSaveGame(
   const starterPlanet = homeSystem.planets[0];
   const shipDef = SHIP_CLASSES.explorer;
 
-  let playerInventory: (InventorySlot | null)[] = new Array(24).fill(null);
+  let playerInventory: (InventorySlot | null)[] = new Array(30).fill(null);
   playerInventory = addItemToSlots(playerInventory, 'ferrite_dust', 28).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'carbon', 18).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'oxygen', 15).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'sodium', 12).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'cobalt', 6).nextSlots;
+  playerInventory = addItemToSlots(playerInventory, 'copper_ore', 8).nextSlots;
+  playerInventory = addItemToSlots(playerInventory, 'silicate_powder', 8).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'life_gel', 2).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'ion_battery', 2).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'launch_fuel', 2).nextSlots;
   playerInventory = addItemToSlots(playerInventory, 'warp_cell', 1).nextSlots;
 
-  const shipInventory: (InventorySlot | null)[] = new Array(24).fill(null);
-  const baseStorage: (InventorySlot | null)[] = new Array(24).fill(null);
+  const shipInventory: (InventorySlot | null)[] = new Array(30).fill(null);
+  const baseStorage: (InventorySlot | null)[] = new Array(30).fill(null);
 
   const partial: Omit<SaveGameData, 'checksum'> = {
     version: SAVE_VERSION,
