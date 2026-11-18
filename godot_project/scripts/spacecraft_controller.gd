@@ -157,6 +157,7 @@ func _physics_process(delta: float) -> void:
 
 	if landed:
 		gear_group.visible = true
+		AudioManager.set_thruster_level(0.0)
 		if Input.is_action_just_pressed("board_exit"):
 			_exit_ship(planet)
 			return
@@ -165,6 +166,7 @@ func _physics_process(delta: float) -> void:
 			takeoff_grace = 1.6
 			vel = global_basis.y * 28.0 + (-global_basis.z) * 18.0
 			gear_group.visible = false
+			AudioManager.play_sfx("takeoff")
 			GameManager.post_alert("Liftoff — Ascending Through Atmosphere")
 		return
 
@@ -187,6 +189,7 @@ func _physics_process(delta: float) -> void:
 	if vel.length() > max_sp:
 		vel = vel.normalized() * max_sp
 	global_position += vel * delta
+	AudioManager.set_thruster_level(0.85 if thrust else 0.25, 0.8 if boost else 0.0)
 
 	# Mining / Pulse Cannon Fire in Space
 	fire_cooldown = maxf(0.0, fire_cooldown - delta)
@@ -213,6 +216,8 @@ func _physics_process(delta: float) -> void:
 		global_basis = global_basis.orthonormalized().slerp(target_basis, clampf(7.5 * delta, 0.0, 1.0))
 		if global_position.distance_to(target_pos) < 0.75:
 			park_at_planet(planet, global_position)
+			AudioManager.set_thruster_level(0.0)
+			AudioManager.play_sfx("touchdown")
 			GameManager.save_data["current_planet_id"] = planet.profile["id"]
 			GameManager.post_alert("Touchdown Complete — Parked on %s" % planet.profile["name"])
 	elif alt < 2.2:
@@ -224,8 +229,10 @@ func _physics_process(delta: float) -> void:
 			var rv := vel.dot(dir_c)
 			if rv < 0.0:
 				vel -= dir_c * (rv * 1.15)
+				AudioManager.play_sfx("impact_light")
 
 func _fire_ship_cannons() -> void:
+	AudioManager.play_sfx("laser_bolt")
 	var space := get_world_3d().direct_space_state
 	var origin := global_position + (-global_basis.z) * 4.0
 	var end := origin + (-global_basis.z) * 180.0
@@ -233,12 +240,15 @@ func _fire_ship_cannons() -> void:
 	if not hit.is_empty():
 		var col: Object = hit["collider"]
 		if col is Node and col.has_meta("resource_id"):
+			AudioManager.play_sfx("explosion")
 			GameManager.add_player_resource(str(col.get_meta("resource_id")), 6, "mine")
 			col.queue_free()
 
 func _exit_ship(planet: SphericalPlanet) -> void:
 	if GameManager.active_explorer == null:
 		return
+	AudioManager.set_thruster_level(0.0)
+	AudioManager.play_sfx("board_airlock")
 	var dir := (global_position - planet.global_position).normalized()
 	var tangent := (global_basis.x * 5.2)
 	var exit_dir := (global_position + tangent - planet.global_position).normalized()

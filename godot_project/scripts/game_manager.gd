@@ -184,6 +184,7 @@ func add_player_resource(item_id: String, qty: int, source_tag: String = "mine")
 	if left > 0:
 		_add_to_array(save_data["ship_inventory"], item_id, left)
 	var item_name: String = str(UniverseCatalog.ITEMS.get(item_id, {}).get("name", item_id))
+	AudioManager.play_sfx("pickup")
 	post_alert("+%d %s" % [qty, item_name])
 	if source_tag == "mine":
 		_advance_mission("mine", 1)
@@ -221,6 +222,7 @@ func craft_recipe(recipe_id: String) -> bool:
 		remove_from_array(inv, ing["id"], int(ing["qty"]))
 	_add_to_array(inv, recipe["output_id"], int(recipe["output_qty"]))
 	var out_name: String = str(UniverseCatalog.ITEMS.get(recipe["output_id"], {}).get("name", recipe["output_id"]))
+	AudioManager.play_sfx("craft")
 	post_alert("Synthesized %dx %s" % [int(recipe["output_qty"]), out_name])
 	state_changed.emit()
 	return true
@@ -258,6 +260,7 @@ func use_consumable(item_id: String) -> bool:
 			ship["launch_fuel"] = minf(100.0, float(ship["launch_fuel"]) + amt)
 		"warp_fuel":
 			ship["warp_fuel"] = minf(100.0, float(ship["warp_fuel"]) + amt)
+	AudioManager.play_sfx("consumable")
 	post_alert("Used %s" % def["name"])
 	state_changed.emit()
 	return true
@@ -307,6 +310,7 @@ func register_discovery(disc_id: String, disc_name: String, disc_type: String, r
 	var reward := 180 if rarity == "Rare" else (350 if rarity in ["Exotic", "Mythic"] else 90)
 	save_data["credits"] = int(save_data["credits"]) + reward
 	_advance_mission("scan", 1)
+	AudioManager.play_sfx("discovery")
 	post_alert("Discovered %s (+%d CR)" % [disc_name, reward])
 	state_changed.emit()
 
@@ -337,6 +341,7 @@ func warp_to_system(target_coords: Vector3i) -> bool:
 	current_planet = current_system["planets"][0]
 	save_data["current_planet_id"] = current_planet["id"]
 	play_mode = "in_ship"
+	AudioManager.play_sfx("warp")
 	system_changed.emit(current_system)
 	post_alert("Arrived in %s (%s)" % [current_system["name"], current_system["star_class"]])
 	state_changed.emit()
@@ -360,6 +365,7 @@ func claim_mission(mission_id: String) -> bool:
 		if m["id"] == mission_id and not m["claimed"] and int(m["progress"]) >= int(m["required"]):
 			m["claimed"] = true
 			save_data["credits"] = int(save_data["credits"]) + int(m["credits"])
+			AudioManager.play_sfx("discovery")
 			post_alert("Mission Claimed: +%d CR" % int(m["credits"]))
 			state_changed.emit()
 			return true

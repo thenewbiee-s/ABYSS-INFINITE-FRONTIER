@@ -24,6 +24,8 @@ var mouse_sens: float = 0.0026
 var mine_cooldown: float = 0.0
 var scan_progress: float = 0.0
 var scan_target_key: String = ""
+var _step_cd: float = 0.0
+var _scan_sfx_cd: float = 0.0
 
 func _ready() -> void:
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
@@ -178,6 +180,7 @@ func _physics_process(delta: float) -> void:
 		if on_ground:
 			radial_vel = 8.2
 			on_ground = false
+			AudioManager.play_sfx("jump")
 		elif jet_fuel > 1.5:
 			radial_vel = minf(radial_vel + 24.0 * delta, 12.5)
 			jetpacking = true
@@ -198,6 +201,8 @@ func _physics_process(delta: float) -> void:
 	var ground_r := float(surf["radius"])
 	var new_dist := global_position.distance_to(p_center)
 	if new_dist <= ground_r + 0.06:
+		if not on_ground and radial_vel < -4.0:
+			AudioManager.play_sfx("land")
 		global_position = p_center + new_dir * (ground_r + 0.02)
 		if radial_vel < 0.0:
 			radial_vel = 0.0
@@ -224,7 +229,9 @@ func _physics_process(delta: float) -> void:
 	camera.global_position = cam_pos
 	camera.look_at(global_position + new_dir * 1.45, new_dir)
 
-	# Limb walk animation
+	# Limb walk animation + surface footsteps & jetpack thruster audio
+	_step_cd = maxf(0.0, _step_cd - delta)
+	_scan_sfx_cd = maxf(0.0, _scan_sfx_cd - delta)
 	var sp := tan_vel.length()
 	if sp > 0.4 and on_ground:
 		walk_phase += delta * sp * 1.45
@@ -232,9 +239,14 @@ func _physics_process(delta: float) -> void:
 		leg_r.rotation.x = -sin(walk_phase) * 0.65
 		arm_l.rotation.x = -sin(walk_phase) * 0.5
 		arm_r.rotation.x = sin(walk_phase) * 0.5
+		if _step_cd <= 0.0 and sp > 1.2:
+			_step_cd = 0.28 if not sprinting else 0.20
+			var step_sfx := "footstep_water" if in_water else ("footstep_snow" if str(planet.profile.get("archetype_id", "")) in ["frozen", "ice_crystal"] else "footstep_rock")
+			AudioManager.play_sfx(step_sfx)
 	else:
 		leg_l.rotation.x = lerpf(leg_l.rotation.x, 0.0, 0.2)
 		leg_r.rotation.x = lerpf(leg_r.rotation.x, 0.0, 0.2)
+	AudioManager.set_thruster_level(0.55 if jetpacking else 0.0, 0.25)
 
 	var near_ship := GameManager.active_ship != null and global_position.distance_to(GameManager.active_ship.global_position) < 9.5
 	GameManager.step_survival(delta, in_water, jetpacking, near_ship)
@@ -245,12 +257,18 @@ func _handle_tools(delta: float, planet: SphericalPlanet) -> void:
 		if global_position.distance_to(GameManager.active_ship.global_position) < 10.5:
 			GameManager.play_mode = "in_ship"
 			GameManager.active_ship.takeoff_grace = 0.6
+			AudioManager.set_beam_active(false)
+			AudioManager.play_sfx("board_airlock")
 			GameManager.post_alert("Entered %s" % GameManager.save_data["ship"]["name"])
 			return
 
 	mine_cooldown = maxf(0.0, mine_cooldown - delta)
 	var do_mine := Input.is_action_pressed("mine_fire") or bool(GameManager.touch_actions.get("mine", false))
 	var do_scan := Input.is_action_pressed("scan") or bool(GameManager.touch_actions.get("scan", false))
+	AudioManager.set_beam_active(do_mine)
+	if do_scan and _scan_sfx_cd <= 0.0:
+		_scan_sfx_cd = 0.65
+		AudioManager.play_sfx("scan_pulse")
 	if not do_mine and not do_scan:
 		scan_progress = 0.0
 		return
@@ -283,6 +301,7 @@ func _handle_tools(delta: float, planet: SphericalPlanet) -> void:
 
 	if do_mine and mine_cooldown <= 0.0:
 		mine_cooldown = 0.22
+		AudioManager.play_sfx("impact_light")
 		if t_type == "creature" and collider.has_meta("creature_ref"):
 			var cref: AlienCreature = collider.get_meta("creature_ref")
 			if is_instance_valid(cref):
@@ -292,5 +311,6 @@ func _handle_tools(delta: float, planet: SphericalPlanet) -> void:
 			collider.set_meta("hp", cur_hp)
 			if cur_hp <= 0.0:
 				var res_id := str(collider.get_meta("resource_id"))
+				AudioManager.play_sfx("explosion")
 				GameManager.add_player_resource(res_id, randi_range(3, 6), "mine")
 				collider.queue_free()

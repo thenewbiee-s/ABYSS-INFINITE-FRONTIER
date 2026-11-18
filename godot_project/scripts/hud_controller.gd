@@ -60,11 +60,12 @@ func _build_ui() -> void:
 	# Top-right Quick Menu Buttons (important for touch/HP as well as mouse)
 	var top_btns := HBoxContainer.new()
 	top_btns.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	top_btns.position = Vector2(-210, 44)
-	top_btns.custom_minimum_size = Vector2(195, 34)
+	top_btns.position = Vector2(-260, 44)
+	top_btns.custom_minimum_size = Vector2(245, 34)
 	hud_root.add_child(top_btns)
 	_add_btn(top_btns, "MENU", func(): _toggle_systems("cargo"))
 	_add_btn(top_btns, "GALAXY", func(): _toggle_systems("galaxy"))
+	_add_btn(top_btns, "MUTE", func(): AudioManager.set_muted(not AudioManager.muted))
 	_add_btn(top_btns, "PAUSE", func(): _toggle_pause())
 
 	# Crosshair
@@ -153,6 +154,7 @@ func _build_ui() -> void:
 	var pv := VBoxContainer.new()
 	pause_panel.add_child(pv)
 	_add_btn(pv, "RESUME", func(): _toggle_pause())
+	_add_btn(pv, "TOGGLE AUDIO (MUTE)", func(): AudioManager.set_muted(not AudioManager.muted))
 	_add_btn(pv, "TOGGLE TOUCH HUD (HP)", func():
 		GameManager.is_mobile_ui = not GameManager.is_mobile_ui
 		_refresh()
@@ -202,8 +204,11 @@ func _build_touch_controls() -> void:
 func _add_btn(parent: Node, label_txt: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = label_txt
-	b.custom_minimum_size = Vector2(88, 36)
-	b.pressed.connect(cb)
+	b.custom_minimum_size = Vector2(78, 36)
+	b.pressed.connect(func():
+		AudioManager.play_sfx("ui_click")
+		cb.call()
+	)
 	parent.add_child(b)
 	return b
 

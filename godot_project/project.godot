@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 UniverseCatalog="*res://scripts/universe_catalog.gd"
 SaveManager="*res://scripts/save_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
+AudioManager="*res://scripts/audio_manager.gd"
 
 [display]
 

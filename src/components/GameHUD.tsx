@@ -119,7 +119,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       <div className="relative z-10 flex items-start justify-between gap-1.5 sm:gap-4">
         {/* Top-Left Survival / Starship Telemetry Cluster */}
         <div
-          className="bg-[#070d1a]/82 border-l-2 border-sky-400 px-2 sm:px-3.5 py-1.5 sm:py-2.5 min-w-[126px] sm:min-w-[235px]"
+          className="bg-[#070d1a]/82 border-l-2 border-sky-400 px-2 sm:px-3.5 py-1.5 sm:py-2.5 w-[132px] sm:w-[240px] shrink-0"
           style={{ clipPath: 'polygon(0 0, 100% 0, 96% 100%, 0 100%)' }}
         >
           {!inShip ? (
@@ -157,7 +157,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           ) : (
             <div className="flex flex-col gap-1 sm:gap-1.5">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-widest text-amber-300 uppercase truncate max-w-[78px] sm:max-w-none">
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-widest text-amber-300 uppercase truncate max-w-[78px] sm:max-w-[130px]">
                   {ship.name}
                 </span>
                 <span className="text-[11px] sm:text-sm font-bold text-white tabular-nums">
@@ -173,7 +173,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
 
         {/* Top-Center Compass & Active Environment Readout */}
-        <div className="hidden sm:flex flex-col items-center gap-0.5 px-4 py-1.5 bg-[#070d1a]/84 border-b border-sky-400/60">
+        <div className="hidden sm:flex sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-0 flex-col items-center gap-0.5 px-4 py-1.5 bg-[#070d1a]/84 border-b border-sky-400/60 whitespace-nowrap">
           <div className="flex items-center gap-3 text-xs">
             <span className="font-bold text-sky-300 tabular-nums">{telemetry.compassHeadingDeg}°</span>
             <span className="text-white font-semibold tracking-wide">
@@ -208,7 +208,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
         {/* Top-Right Compact Utility Controls + Credits */}
         <div className="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0">
-          <div className="hidden sm:block px-3 py-1.5 bg-[#070d1a]/82 border border-slate-700/80 text-xs font-bold text-amber-300 tabular-nums">
+          <div className="hidden sm:block px-3 py-1.5 bg-[#070d1a]/82 border border-slate-700/80 text-xs font-bold text-amber-300 tabular-nums min-w-[84px] text-right">
             {save.credits.toLocaleString()} CR
           </div>
           <button

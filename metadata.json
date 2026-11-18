@@ -2,5 +2,7 @@
   "name": "ABYSS: INFINITE FRONTIER",
   "description": "Open-universe procedural 3D space exploration, planetary survival, spacecraft flight, crafting, alien wildlife, and base-building game.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

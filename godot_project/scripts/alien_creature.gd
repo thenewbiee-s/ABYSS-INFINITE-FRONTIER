@@ -170,7 +170,9 @@ func _build_visual_rig() -> void:
 
 func take_damage(dmg: float) -> void:
 	hp -= dmg
+	AudioManager.play_sfx("creature_growl" if str(species.get("temperament", "docile")) == "predator" else "creature_chirp")
 	if hp <= 0.0:
+		AudioManager.play_sfx("explosion")
 		var bt: String = str(species.get("body_type", "quadruped"))
 		var drop := "kelp_sac" if bt == "aquatic" else ("biolum_spore" if species.get("biolum", false) else "mordite")
 		GameManager.add_player_resource(drop, 2, "combat")

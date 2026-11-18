@@ -5,7 +5,7 @@ import {
   ITEMS,
   SHIP_CLASSES,
 } from './catalog';
-import { SoundEngine } from './audio';
+import { FootstepSurface, resolveAmbientContext, SoundEngine } from './audio';
 import {
   animateExplorerRig,
   createBaseStructureMesh,
@@ -681,7 +681,7 @@ export class AbyssEngine {
       this.audio.silenceLoops();
       if (document.pointerLockElement) document.exitPointerLock?.();
     } else {
-      this.audio.unlock();
+      this.audio.unlock(false);
     }
   }
 
@@ -725,7 +725,7 @@ export class AbyssEngine {
 
   public setTouchAction(action: 'jump' | 'mine' | 'scan' | 'boost' | 'board' | 'build', active: boolean): void {
     if (this.phase !== 'playing') return;
-    this.audio.unlock();
+    this.audio.unlock(true);
     if (action === 'board' && active) {
       this.justPressedKeys.add('KeyF');
       return;
@@ -952,7 +952,7 @@ export class AbyssEngine {
 
   private onMouseDown = (e: MouseEvent): void => {
     if (this.phase !== 'playing' || this.modalOpen) return;
-    this.audio.unlock();
+    this.audio.unlock(true);
     this.lastClientX = e.clientX;
     this.lastClientY = e.clientY;
 
@@ -1227,6 +1227,7 @@ export class AbyssEngine {
 
     if (this.phase === 'title') {
       this.updateTitleCamera(dt);
+      this.audio.updateAmbient(resolveAmbientContext('title', true, false, 'Clear', 'none'), dt);
       this.explorer.root.position.copy(this.playerPos);
       this.spacecraft.root.position.copy(this.shipPos);
       this.spacecraft.root.quaternion.copy(this.shipQuat);
@@ -1399,7 +1400,7 @@ export class AbyssEngine {
         this.scene.remove(this.buildPreviewGroup);
         this.buildPreviewGroup = null;
       }
-      this.audio.playUiClick();
+      this.audio.playBoardOrExit(true);
       this.pushAlert('SYSTEMS ONLINE — THRUSTERS READY FOR LAUNCH');
       return;
     }
@@ -1485,7 +1486,7 @@ export class AbyssEngine {
       this.jumpBufferTimer = 0;
       this.playerOnGround = false;
       this.explorer.squashY = 1.18;
-      this.audio.playTone(180, 320, 0.12, 'sine', 0.1);
+      this.audio.playJump();
     } else if (jumpHeld && !this.playerOnGround && this.saveData.survival.jetpack > 1) {
       isJetpacking = true;
       nextRad = Math.min(12.5, nextRad + 22 * dt);
@@ -1510,7 +1511,7 @@ export class AbyssEngine {
     if (distFromCenter <= groundR + 0.06) {
       if (!this.playerOnGround && nextRad < -4) {
         this.explorer.squashY = 0.78;
-        this.audio.playImpact(false);
+        this.audio.playLand(nextRad < -11);
       }
       this.playerPos.copy(pCenter).addScaledVector(newDir, groundR + 0.02);
       if (this.playerVel.dot(newDir) < 0) {
@@ -1545,7 +1546,12 @@ export class AbyssEngine {
 
     const groundSpeed = vTan.length();
     if (this.playerOnGround && groundSpeed > 1.2) {
-      this.audio.playFootstep();
+      let stepSurface: FootstepSurface = 'rock';
+      if (isInWater) stepSurface = 'water';
+      else if (planet.archetype.includes('frozen') || planet.archetype.includes('ice')) stepSurface = 'snow';
+      else if (planet.archetype.includes('desert') || planet.archetype.includes('canyon')) stepSurface = 'sand';
+      else if (planet.archetype === 'metallic' || planet.archetype === 'machine_world') stepSurface = 'metal';
+      this.audio.playFootstep(stepSurface);
     }
     this.audio.updateThruster(isJetpacking ? 0.65 : 0, 0.3);
 
@@ -1723,6 +1729,7 @@ export class AbyssEngine {
       }
       const speed = 1.4 + (this.saveData.survival.scannerLevel - 1) * 0.45;
       this.scanProgress = Math.min(1, this.scanProgress + dt * speed);
+      this.audio.playScanTick(this.scanProgress);
       if (this.scanProgress >= 1) {
         bestObj.mark();
         this.scanProgress = 0;
@@ -1877,7 +1884,7 @@ export class AbyssEngine {
       this.playerVel.set(0, 0, 0);
       this.explorer.root.visible = true;
       this.audio.silenceLoops();
-      this.audio.playUiClick();
+      this.audio.playBoardOrExit(false);
       return;
     }
 
@@ -1890,6 +1897,7 @@ export class AbyssEngine {
       if (thrustInput) {
         if (this.saveData.ship.launchFuel <= 0) {
           this.pushAlert('OUT OF LAUNCH FUEL — CRAFT LAUNCH FUEL IN INVENTORY [TAB]');
+          this.audio.playAlertWarning(true);
         } else {
           this.shipLanded = false;
           this.shipAutoLanding = false;
@@ -1900,7 +1908,7 @@ export class AbyssEngine {
           this.shipQuat.multiply(_q1).normalize();
           this.shipVel.copy(localUp).multiplyScalar(42);
           this.shipPos.addScaledVector(localUp, 3.0);
-          this.audio.playTone(90, 260, 0.45, 'sawtooth', 0.18);
+          this.audio.playShipTakeoff();
           this.pushAlert('LIFTOFF — ASCENDING THROUGH ATMOSPHERE');
         }
       }
@@ -2037,7 +2045,7 @@ export class AbyssEngine {
         this.shipLanded = true;
         this.shipAutoLanding = false;
         this.shipLandedPlanetId = nextNearest.runtime.profile.id;
-        this.audio.playImpact(false);
+        this.audio.playShipLanding();
         this.pushAlert(`LANDED ON ${nextNearest.runtime.profile.name.toUpperCase()} — PRESS [F] TO DISEMBARK`);
 
         if (!nextNearest.runtime.profile.discovered) {
@@ -2124,11 +2132,12 @@ export class AbyssEngine {
         if (distPlayer < 3.4 && c.state !== 'windup') {
           c.state = 'windup';
           c.windupTimer = 0.45;
-          this.audio.playTone(320, 520, 0.25, 'sawtooth', 0.08);
+          this.audio.playCreatureCall('predator');
         } else if (c.state !== 'windup') {
           c.state = 'hunt';
         }
       } else if (c.species.temperament === 'skittish' && distPlayer < 14 && this.playMode === 'on_foot') {
+        if (c.state !== 'flee') this.audio.playCreatureCall('skittish');
         c.state = 'flee';
       } else if (c.stateTimer <= 0) {
         c.state = 'roam';
@@ -2223,6 +2232,7 @@ export class AbyssEngine {
         if (pir.fireCooldown <= 0) {
           pir.fireCooldown = 2.1;
           this.fireBolt(pir.pos, toShip, 220, 14, true);
+          if (d < 260) this.audio.playLaserBolt(true);
         }
       }
     }
@@ -2254,7 +2264,7 @@ export class AbyssEngine {
               ast.active = false;
               ast.mesh.visible = false;
               this.hitstopTimer = 0.04;
-              this.audio.playImpact(true);
+              this.audio.playExplosion();
               this.spawnBurst(ast.pos, '#38bdf8', 18, 16);
               this.callbacks.onAddResource(ast.resourceId, 5, 'mine');
             }
@@ -2274,7 +2284,7 @@ export class AbyssEngine {
                 pir.mesh.visible = false;
                 this.hitstopTimer = 0.055;
                 this.cameraTrauma = Math.min(1, this.cameraTrauma + 0.45);
-                this.audio.playImpact(true);
+                this.audio.playExplosion();
                 this.spawnBurst(pir.pos, '#f43f5e', 24, 22);
                 this.callbacks.onAddResource('nano_alloy', 2, 'combat');
                 this.pushAlert('HOSTILE INTERCEPTOR DESTROYED (+2 NANO-ALLOY)');
@@ -2286,12 +2296,14 @@ export class AbyssEngine {
       } else if (this.playMode === 'in_ship' && b.pos.distanceTo(this.shipPos) < 4.5) {
         b.active = false;
         this.cameraTrauma = Math.min(1, this.cameraTrauma + 0.4);
-        this.audio.playImpact(true);
         if (this.saveData.ship.shield > 0) {
+          this.audio.playShieldHit();
           this.saveData.ship.shield = Math.max(0, this.saveData.ship.shield - b.damage);
         } else {
+          this.audio.playImpact(true);
           this.saveData.ship.hull = Math.max(0, this.saveData.ship.hull - b.damage);
           if (this.saveData.ship.hull <= 0) {
+            this.audio.playExplosion();
             this.setPhase('gameover');
             this.callbacks.onGameOver('Starship hull destroyed in orbital combat');
           }
@@ -2356,6 +2368,19 @@ export class AbyssEngine {
 
     const starMat = this.starPoints.material as THREE.PointsMaterial;
     starMat.opacity = THREE.MathUtils.clamp(1 - atmoFactor * 0.9, 0.08, 0.95);
+
+    const underwater =
+      this.playMode !== 'in_ship' &&
+      planet.hasWater &&
+      !planet.waterIsLava &&
+      nearest.distCenter < planet.waterLevel;
+    this.audio.updateAmbient(
+      resolveAmbientContext(this.phase, nearest.altitude < 120, underwater, planet.weather, planet.hazard),
+      dt
+    );
+    if (this.saveData.survival.oxygen < 22 || (planet.hazard !== 'none' && planet.hazard !== 'void' && this.saveData.survival.hazardShield < 20)) {
+      this.audio.playAlertWarning(true);
+    }
   }
 
   private emitTelemetry(): void {

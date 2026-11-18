@@ -34,6 +34,9 @@ func _on_system_changed(sys_data: Dictionary) -> void:
 
 func _process(_delta: float) -> void:
 	if GameManager.play_mode == "menu" or sys_builder.planets.is_empty():
+		AudioManager.set_ambient_context("menu")
+		AudioManager.set_thruster_level(0.0)
+		AudioManager.set_beam_active(false)
 		return
 	var ref_pos := spacecraft.global_position if GameManager.play_mode == "in_ship" else explorer.global_position
 	var nearest := sys_builder.get_nearest_planet(ref_pos)
@@ -44,6 +47,18 @@ func _process(_delta: float) -> void:
 
 	var alt := ref_pos.distance_to(nearest.global_position) - float(nearest.profile["radius"])
 	var in_atmo := alt < 130.0
+	var underwater := GameManager.play_mode != "in_ship" and bool(nearest.profile["has_water"]) and not bool(nearest.profile["water_is_lava"]) and ref_pos.distance_to(nearest.global_position) < float(nearest.profile["water_level"])
+	var weather_l := str(nearest.profile.get("weather", "Clear")).to_lower()
+	var is_storm := "storm" in weather_l or "blizzard" in weather_l or "tempest" in weather_l or "acid" in weather_l
+	if underwater:
+		AudioManager.set_ambient_context("underwater")
+	elif not in_atmo:
+		AudioManager.set_ambient_context("space")
+	elif is_storm:
+		AudioManager.set_ambient_context("planet_storm")
+	else:
+		AudioManager.set_ambient_context("planet_calm")
+
 	var env := world_env.environment
 	if env != null and env.sky != null and env.sky.sky_material is ProceduralSkyMaterial:
 		var psky: ProceduralSkyMaterial = env.sky.sky_material

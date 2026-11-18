@@ -23,6 +23,7 @@ import { ARCHETYPE_LIST, ITEM_LIST, ITEMS, RECIPES } from './catalog';
 import { PlacedStructure } from './types';
 import { createPlanetRuntime, samplePlanetMeshSurface } from './planetWorld';
 import { ProceduralTextureSet } from './textures';
+import { resolveAmbientContext } from './audio';
 
 function makeMockStorage(): Storage {
   const map = new Map<string, string>();
@@ -234,3 +235,27 @@ test('save checksum, corruption detection, and backup recovery work', () => {
   const badCheck = validateSaveGame({ ...save1, credits: 999999 });
   assert.equal(badCheck.valid, false);
 });
+
+test('ambient backsound resolver selects distinct mode and harmonic mood per environment', () => {
+  assert.deepEqual(resolveAmbientContext('title', true, false, 'Clear', 'none'), {
+    mode: 'menu',
+    mood: 'mystic',
+  });
+  assert.deepEqual(resolveAmbientContext('playing', false, false, 'Clear', 'none'), {
+    mode: 'space',
+    mood: 'mystic',
+  });
+  assert.deepEqual(resolveAmbientContext('playing', true, true, 'Monsoon', 'pressure'), {
+    mode: 'underwater',
+    mood: 'mystic',
+  });
+  assert.deepEqual(resolveAmbientContext('playing', true, false, 'Ion Tempest', 'radiation'), {
+    mode: 'planet_storm',
+    mood: 'tense',
+  });
+  assert.deepEqual(resolveAmbientContext('playing', true, false, 'Balmy Breeze', 'none'), {
+    mode: 'planet_calm',
+    mood: 'bright',
+  });
+});
+

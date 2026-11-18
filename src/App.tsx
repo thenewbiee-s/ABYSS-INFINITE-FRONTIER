@@ -161,6 +161,7 @@ export default function App() {
             });
             return { ...prev, playerInventory: added.nextSlots, missions: nextMissions };
           });
+          engine.audio.playPickupResource();
           engine.pushAlert(`+${qty} ${ITEMS[itemId]?.name ?? itemId}`);
         },
         onDiscovery: (entry: DiscoveryEntry) => {
@@ -327,7 +328,7 @@ export default function App() {
       survival: res.nextSurvival,
       ship: res.nextShip,
     }));
-    engineRef.current?.audio.playUiClick();
+    engineRef.current?.audio.playConsumable(ITEMS[itemId]?.usableEffect?.type);
     engineRef.current?.pushAlert(res.message);
   };
 
@@ -368,7 +369,7 @@ export default function App() {
       return;
     }
     commitSave((prev) => ({ ...prev, playerInventory: res.nextSlots }), true);
-    engineRef.current?.audio.playBuildPlace();
+    engineRef.current?.audio.playCraftSuccess();
     engineRef.current?.pushAlert('Synthesis Complete');
   };
 
